@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="tpVN.db" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser query pragmas" current="2"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="2987"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="0" parent="0"/><expanded_item id="1" parent="0"/><expanded_item id="2" parent="0"/><expanded_item id="3" parent="0"/><expanded_item id="4" parent="0"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><table title="dia_diem" custom_title="0" dock_id="2" table="4,8:maindia_diem"/><dock_state state="000000ff00000000fd0000000100000002000005f2000001dffc0100000002fb000000160064006f0063006b00420072006f00770073006500310100000000000005f20000000000000000fb000000160064006f0063006b00420072006f00770073006500320100000000000005f20000011100ffffff000002870000000000000004000000040000000800000008fc00000000"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="dia_diem" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort><column index="1" mode="0"/></sort><column_widths><column index="1" value="32"/><column index="2" value="105"/><column index="3" value="107"/><column index="4" value="249"/><column index="5" value="293"/><column index="6" value="109"/><column index="7" value="40"/><column index="8" value="88"/><column index="9" value="103"/><column index="10" value="85"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="lich_su_truy_cap" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="32"/><column index="2" value="88"/><column index="3" value="70"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="loai_dich_vu" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="32"/><column index="2" value="85"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="quan_huyen" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="83"/><column index="2" value="59"/><column index="3" value="117"/><column index="4" value="39"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="tinh_thanh" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_" freeze_columns="0"><sort/><column_widths><column index="1" value="32"/><column index="2" value="65"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="default*">-- TẠO DATABASE MỚI HOÀN TOÀN (chạy 1 lần là xong sườn)
+PRAGMA foreign_keys = ON;
+
+-- Xóa hết bảng cũ (nếu có)
+DROP TABLE IF EXISTS lich_su_truy_cap;
+DROP TABLE IF EXISTS dia_diem;
+DROP TABLE IF EXISTS quan_huyen;
+DROP TABLE IF EXISTS tinh_thanh;
+DROP TABLE IF EXISTS loai_dich_vu;
+
+-- 1. Tỉnh/Thành phố trực thuộc TW
+CREATE TABLE tinh_thanh (
+    id        INTEGER PRIMARY KEY,      -- 1=Hà Nội, 2=TP.HCM, 3=Đà Nẵng...
+    ten_tinh  TEXT NOT NULL UNIQUE
+);
+
+-- 2. Quận/Huyện/Thành phố thuộc tỉnh
+CREATE TABLE quan_huyen (
+    id         INTEGER PRIMARY KEY,      -- 101-199=Hà Nội, 201-299=TP.HCM...
+    tinh_id    INTEGER NOT NULL,
+    ten_quan   TEXT NOT NULL,
+    loai       TEXT DEFAULT 'Quận',     -- Quận / Huyện / Thành phố / Thị xã
+    FOREIGN KEY (tinh_id) REFERENCES tinh_thanh(id) ON DELETE CASCADE,
+    UNIQUE(tinh_id, ten_quan)
+);
+
+-- 3. Loại dịch vụ (chỉ 5 loại chính + hành chính)
+CREATE TABLE loai_dich_vu (
+    id        INTEGER PRIMARY KEY,
+    ten_loai  TEXT NOT NULL UNIQUE
+);
+
+INSERT INTO loai_dich_vu (id, ten_loai) VALUES
+(1, 'du_lich'),      -- Điểm tham quan, di tích, công viên...
+(2, 'khach_san'),    -- Khách sạn, resort, homestay
+(3, 'nha_hang'),     -- Nhà hàng, quán ăn
+(4, 'vui_choi'),     -- Công viên giải trí, rạp phim, karaoke...
+(5, 'hanh_chinh');   -- Công an, UBND, đại sứ quán, bệnh viện công...
+
+-- 4. Địa điểm (bảng chính)
+CREATE TABLE dia_diem (
+    id              INTEGER PRIMARY KEY,
+    quan_huyen_id   INTEGER NOT NULL,
+    loai_dich_vu_id INTEGER NOT NULL,
+    ten_dia_diem    TEXT    NOT NULL,
+    dia_chi         TEXT,
+    dien_thoai      TEXT,
+    rate            REAL    DEFAULT 0 CHECK(rate BETWEEN 0 AND 5),
+    so_danh_gia     INTEGER DEFAULT 0,
+    gia_trung_binh   TEXT,          -- ví dụ: &quot;Miễn phí&quot;, &quot;100-300k&quot;, &quot;2-5tr&quot;
+    gio_mo_cua       TEXT,
+    FOREIGN KEY (quan_huyen_id)   REFERENCES quan_huyen(id)   ON DELETE CASCADE,
+    FOREIGN KEY (loai_dich_vu_id) REFERENCES loai_dich_vu(id) ON DELETE CASCADE
+);
+
+-- 5. Lịch sử truy cập (để thống kê lượt xem)
+CREATE TABLE lich_su_truy_cap (
+    id           INTEGER PRIMARY KEY,
+    dia_diem_id  INTEGER NOT NULL,
+    thoi_gian   TEXT DEFAULT (datetime('now','localtime')),
+    FOREIGN KEY (dia_diem_id) REFERENCES dia_diem(id) ON DELETE CASCADE
+);
+
+-- KIỂM TRA
+SELECT 'SƯỜN DATABASE MỚI HOÀN THÀNH – SẴN SÀNG THÊM DỮ LIỆU!' AS STATUS;</sql><sql name="importHN*">-- ================== [TỈNH BẠN MUỐN] – 10 ĐIỂM MỚI NHẤT 2025 ==================
+-- Ví dụ dưới đây là HÀ NỘI (bạn chỉ việc đổi tên tỉnh + ID quận khi dùng cho tỉnh khác)
+
+-- 1. Đảm bảo tỉnh + quận (chạy lại cũng an toàn)
+INSERT OR IGNORE INTO tinh_thanh (id, ten_tinh) VALUES (1, 'Hà Nội');
+INSERT OR IGNORE INTO quan_huyen (id, tinh_id, ten_quan, loai) VALUES
+(101,1,'Quận Hoàn Kiếm','Quận'),(102,1,'Quận Ba Đình','Quận'),
+(103,1,'Quận Tây Hồ','Quận'),(104,1,'Quận Đống Đa','Quận'),
+(105,1,'Quận Cầu Giấy','Quận');
+
+-- 2. XÓA sạch dữ liệu cũ của Hà Nội
+DELETE FROM dia_diem WHERE quan_huyen_id BETWEEN 101 AND 105;
+
+-- 3. Thêm mới 10 điểm – rate 3.0→4.5 + lượt xem + số điện thoại ngẫu nhiên đẹp
+INSERT INTO dia_diem (quan_huyen_id, loai_dich_vu_id, ten_dia_diem, dia_chi, dien_thoai,       rate, so_danh_gia,   gia_trung_binh, gio_mo_cua) VALUES
+-- 2 Hành chính
+(101,5,'Công an Quận Hoàn Kiếm','9A P. Lý Thái Tổ',        '024 3825 4718', 4.2,  8427,'Miễn phí','24/7'),
+(102,5,'UBND Quận Ba Đình',     '16 P. Láng Hạ',           '024 3834 5671', 4.1,  3751,'Miễn phí','07:30-17:00'),
+
+-- 2 Du lịch
+(101,1,'Hồ Hoàn Kiếm &amp; Đền Ngọc Sơn','P. Hàng Trống',      '024 39362456', 4.5,142359,'Miễn phí','05:00-23:00'),
+(102,1,'Lăng Chủ tịch Hồ Chí Minh','01 Hùng Vương',       '024 3845 5123', 4.5,189721,'Miễn phí','07:30-10:30'),
+
+-- 2 Khách sạn
+(101,2,'Sofitel Legend Metropole','15 Ngô Quyền',         '024 3826 6919', 4.5, 12843,'5-12tr',  '24h'),
+(103,2,'InterContinental Westlake','05 Từ Hoa',           '024 3628 8800', 4.4,  9637,'3-8tr',   '24h'),
+
+-- 2 Nhà hàng
+(101,3,'Phở Thìn Bờ Hồ','61 Đinh Tiên Hoàng',             '098 765 4321',  4.4, 53219,'60-90k',  '06:00-22:00'),
+(104,3,'Bún chả Hàng Mành','1 Hàng Mành',                 '091 234 5678',  4.5, 67182,'60-100k', '08:00-21:00'),
+
+-- 2 Vui chơi
+(101,4,'Phố đi bộ Hồ Gươm','Khu vực Hồ Hoàn Kiếm',        '024 3936 1234', 4.4,167453,'Miễn phí','T6-CN 19-24h'),
+(105,4,'Vincom Mega Mall Royal City','72A Nguyễn Trãi',   '024 3974 3536', 4.3,112847,'200-1000k','10:00-22:00');
+
+-- 4. Kiểm tra
+SELECT 'HOÀN THÀNH – 10 ĐIỂM MỚI + SỐ ĐIỆN THOẠI!' AS STATUS,
+       COUNT(*) AS SO_DIEM 
+FROM dia_diem 
+WHERE quan_huyen_id BETWEEN 101 AND 105;</sql><sql name="importCT*">-- ================== CẦN THƠ – 10 ĐIỂM MỚI NHẤT 2025 ==================
+
+-- 1. Đảm bảo tỉnh + quận (an toàn khi chạy lại)
+INSERT OR IGNORE INTO tinh_thanh (id, ten_tinh) VALUES (79, 'Cần Thơ');
+
+INSERT OR IGNORE INTO quan_huyen (id, tinh_id, ten_quan, loai) VALUES
+(791,79,'Quận Ninh Kiều','Quận'),
+(792,79,'Quận Bình Thủy','Quận'),
+(793,79,'Quận Cái Răng','Quận'),
+(794,79,'Quận Ô Môn',    'Quận'),
+(795,79,'Huyện Phong Điền','Huyện');
+
+-- 2. XÓA sạch tất cả địa điểm cũ của Cần Thơ
+DELETE FROM dia_diem 
+WHERE quan_huyen_id BETWEEN 791 AND 799;
+
+-- 3. Thêm mới 10 điểm – đúng công thức bạn yêu cầu
+INSERT INTO dia_diem (quan_huyen_id, loai_dich_vu_id, ten_dia_diem, dia_chi, dien_thoai,       rate, so_danh_gia,   gia_trung_binh, gio_mo_cua) VALUES
+-- 2 Hành chính
+(791,5,'Công an TP. Cần Thơ',            '02 Hòa Bình, Ninh Kiều',        '0292 382 1234', 4.2,  7421,'Miễn phí','24/7'),
+(791,5,'UBND TP. Cần Thơ',               '06 Hòa Bình, Ninh Kiều',        '0292 382 0567', 4.1,  3987,'Miễn phí','07:30-17:00'),
+
+-- 2 Du lịch
+(791,1,'Bến Ninh Kiều &amp; Chợ đêm',        'Hải Bà Trưng',                  '0292 382 1234', 4.5, 168429,'Miễn phí','Toàn thời gian'),
+(791,1,'Chợ nổi Cái Răng',               'Cái Răng',                      '0939 123 456',  4.5, 212753,'50-150k', '05:00-09:00'),
+
+-- 2 Khách sạn
+(791,2,'Vinpearl Hotel Cần Thơ',         '209 Đường 30/4, Ninh Kiều',     '0292 376 8888', 4.5,  13427,'2-6tr',    '24h'),
+(791,2,'Mường Thanh Luxury Cần Thơ',     'Khu E1 Cái Khế, Ninh Kiều',     '0292 368 6666', 4.4,  10893,'1.5-4tr',  '24h'),
+
+-- 2 Nhà hàng
+(791,3,'Nhà hàng Lẩu Cá Kèo Cô Ba',      'Khu vực Bến Ninh Kiều',         '0909 876 543',  4.4,  48731,'200-400k', '10:00-23:00'),
+(793,3,'Cơm tấm Phúc Lộc Thọ Cái Răng',  'Khu chợ nổi Cái Răng',          '0918 234 567',  4.3,  62387,'50-80k',   '05:00-21:00'),
+
+-- 2 Vui chơi
+(791,4,'Cầu đi bộ Cần Thơ',              'Ninh Kiều',                     '0292 382 9999', 4.4, 156921,'Miễn phí','18:00-23:00'),
+(795,4,'Khu du lịch Mỹ Khánh',           'Phong Điền',                    '0292 384 1234', 4.3,  89341,'150-300k', '07:30-17:30');
+
+-- 4. Kiểm tra kết quả
+SELECT COUNT(*) AS SO_DIEM_CANTHO 
+FROM dia_diem 
+WHERE quan_huyen_id BETWEEN 791 AND 799;</sql><sql name="importVT*">-- ================== VŨNG TÀU – 10 ĐIỂM MỚI NHẤT 2025 ==================
+
+-- 1. Đảm bảo tỉnh + quận (an toàn khi chạy lại)
+
+INSERT OR IGNORE INTO tinh_thanh (id, ten_tinh) VALUES (80, 'Bà Rịa - Vũng Tàu');
+ALTER TABLE dia_diem ADD COLUMN dien_thoai TEXT;
+INSERT OR IGNORE INTO quan_huyen (id, tinh_id, ten_quan, loai) VALUES
+(801,80,'TP. Vũng Tàu','Thành phố'),
+(802,80,'TP. Bà Rịa','Thành phố'),
+(803,80,'Huyện Long Điền','Huyện'),
+(804,80,'Huyện Xuyên Mộc','Huyện'),
+(805,80,'Huyện Côn Đảo','Huyện');
+
+-- 2. XÓA sạch tất cả địa điểm cũ của Vũng Tàu
+DELETE FROM dia_diem 
+WHERE quan_huyen_id BETWEEN 801 AND 810;
+
+-- 3. Thêm mới 10 điểm – đúng công thức bạn yêu cầu
+INSERT INTO dia_diem (quan_huyen_id, loai_dich_vu_id, ten_dia_diem, dia_chi, dien_thoai,       rate, so_danh_gia,   gia_trung_binh, gio_mo_cua) VALUES
+-- 2 Hành chính
+(801,5,'Công an TP. Vũng Tàu','237 Lê Hồng Phong','0284 385 2211',4.2,  9127,'Miễn phí','24/7'),
+(801,5,'UBND TP. Vũng Tàu','01 Nguyễn Tất Thành','0284 385 2222',4.1,  4873,'Miễn phí','07:30-17:00'),
+
+-- 2 Du lịch
+(801,1,'Bãi Sau (Thùy Vân)','Đường Thùy Vân',4.5, 198427,'Miễn phí','Toàn thời gian'),
+(801,1,'Tượng Chúa Kitô Vua','Núi Nhỏ',4.5, 267853,'50k','07:30-17:00'),
+
+-- 2 Khách sạn
+(801,2,'Imperial Hotel Vũng Tàu','159 Thùy Vân','0254 362 8888',4.5,  15693,'2.5-7tr','24h'),
+(801,2,'Pullman Vung Tau','15 Thi Sách','0254 355 1777',4.4,  12481,'3-8tr','24h'),
+
+-- 2 Nhà hàng
+(801,3,'Gành Hào Restaurant','03 Trần Phú','0284 355 0909',4.4,  78921,'300-800k','10:00-22:00'),
+(801,3,'Nhà hàng Hải Sản Biển Xanh','Bãi Sau','0908 234 567',4.3,  56387,'200-500k','11:00-23:00'),
+
+-- 2 Vui chơi
+(801,4,'Cáp treo Núi Lớn – Hồ Mây','Núi Lớn',4.4, 134567,'250k','08:00-17:30'),
+(805,4,'Khu du lịch sinh thái Côn Đảo','Côn Đảo','0254 383 0123',4.5,  89213,'300-700k','07:00-17:00');
+
+-- 4. Kiểm tra kết quả
+SELECT 'VŨNG TÀU ĐÃ CẬP NHẬT XONG – 10 ĐIỂM MỚI!' AS STATUS,
+       COUNT(*) AS SO_DIEM 
+FROM dia_diem 
+WHERE quan_huyen_id BETWEEN 801 AND 810;</sql><current_tab id="3"/></tab_sql></sqlb_project>
