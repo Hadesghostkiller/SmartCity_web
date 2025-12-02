@@ -303,3 +303,4 @@ INSERT INTO smart_city_db.ThanhPho (id, ten_thanh_pho, mo_ta) VALUES (3, 'Hà N�
 INSERT INTO smart_city_db.ThanhPho (id, ten_thanh_pho, mo_ta) VALUES (4, 'Nha Trang', 'Thành phố biển xinh đẹp');
 INSERT INTO smart_city_db.ThanhPho (id, ten_thanh_pho, mo_ta) VALUES (5, 'Cần Thơ', 'Sông nước rộn ràng mùa nước nổi');
 
+--kkk---
