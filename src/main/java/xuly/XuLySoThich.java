@@ -50,7 +50,7 @@ public class XuLySoThich extends HttpServlet {
                 action = "removed";
             } else {
                 // 3. Nếu chưa thích -> THÊM (ADD)
-                String sqlInsert = "INSERT INTO SoThich (username, id_dia_diem) VALUES (?, ?)";
+                String sqlInsert = "INSERT INTO SoThich (username, id_dia_diem, ngay_them) " + "VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 7 HOUR))";
                 PreparedStatement stmtInsert = conn.prepareStatement(sqlInsert);
                 stmtInsert.setString(1, u);
                 stmtInsert.setString(2, idDiaDiem);
