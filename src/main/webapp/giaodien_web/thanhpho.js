@@ -2,6 +2,7 @@
 const urlParams = new URLSearchParams(window.location.search);
 const currentId = urlParams.get('id');
 const currentFullName = localStorage.getItem("currentFullName");
+const currentUser = localStorage.getItem("currentUser");
 
 if(document.getElementById('userHello') && currentFullName) {
     document.getElementById('userHello').innerText = "Xin chào " + currentFullName;
@@ -93,10 +94,12 @@ let globalTotalPages = 1;
 function loadDiaDiem() {
     const cityId = new URLSearchParams(window.location.search).get('id');
     const container = document.getElementById('listDiaDiem');
+    const currentUser = localStorage.getItem("currentUser"); // Lấy user hiện tại
 
     container.innerHTML = "<p>Đang tải...</p>";
 
-    fetch(`/SMcity/api/lay-dia-diem?id_city=${cityId}&type=${globalType}&page=${globalPage}`)
+    // SỬA URL: Thêm &user=${currentUser}
+    fetch(`/SMcity/api/lay-dia-diem?id_city=${cityId}&type=${globalType}&page=${globalPage}&user=${currentUser}`)
         .then(res => res.json())
         .then(result => {
             container.innerHTML = "";
@@ -105,11 +108,16 @@ function loadDiaDiem() {
                 container.innerHTML = "<p>Chưa có địa điểm nào thuộc mục này.</p>";
                 return;
             }
-            // Vẽ từng địa điểm
+
             result.data.forEach(item => {
                 let div = document.createElement("div");
-                // THÊM SỰ KIỆN ONCLICK VÀO TÊN ĐỊA ĐIỂM
+
+                // KIỂM TRA ĐỂ HIỆN DẤU TICK
+                // Nếu item.is_fav là true thì hiện ✅, ngược lại thì rỗng
+                let favMark = item.is_fav ? '<span style="float:right; font-size:1.2em;">✅</span>' : '';
+
                 div.innerHTML = `
+                ${favMark} 
                 <a href="DiaDiem.html?id=${item.id}" style="text-decoration: none; color: blue; font-size: 1.2em; cursor: pointer;">
                     <b>${item.ten}</b>
                 </a> 
@@ -117,7 +125,6 @@ function loadDiaDiem() {
                 <span>Địa chỉ: ${item.diachi}</span>
                 <hr> 
             `;
-
                 container.appendChild(div);
             });
 
