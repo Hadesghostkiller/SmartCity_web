@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Trang Cá Nhân</title>
+</head>
+<body>
+<div style="text-align: right;">
+    <a href="chonThanhPho.html">Về trang chủ</a> | <a href="login.html">Đăng xuất</a>
+</div>
+<hr>
+
+<h2>Hồ Sơ Của Tôi</h2>
+
+<div style="border: 1px solid #ccc; padding: 15px; width: 400px;">
+    <h3>1. Thông tin tài khoản</h3>
+    <p>Username: <b id="lblUser">...</b></p>
+    <p>Họ và Tên: <input type="text" id="inpName"> <button id="btnSaveName">Lưu tên</button></p>
+
+    <hr>
+
+    <h3>2. Đổi mật khẩu</h3>
+    Mật khẩu cũ: <br><input type="password" id="oldPass"><br>
+    Mật khẩu mới: <br><input type="password" id="newPass"><br><br>
+    <button id="btnChangePass">Đổi Mật Khẩu</button>
+</div>
+
+<br>
+
+<div style="border: 1px solid #ccc; padding: 15px;">
+    <h3>3. Địa điểm yêu thích của tôi ❤️</h3>
+    <div id="favList">
+        Đang tải...
+    </div>
+</div>
+
+<script src="profile.js"></script>
+</body>
+</html>
