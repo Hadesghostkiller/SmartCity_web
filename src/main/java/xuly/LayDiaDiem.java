@@ -21,7 +21,8 @@ public class LayDiaDiem extends HttpServlet {
         PrintWriter out = resp.getWriter();
 
         String idCity = req.getParameter("id_city");
-        String typeId = req.getParameter("type"); // 0: Tất cả, 1: Nhà hàng...
+        String typeId = req.getParameter("type");
+        String username = req.getParameter("user"); // NHẬN THÊM USERNAME
         int page = 1;
         int limit = 10; // Giới hạn 10 địa điểm/trang
 
@@ -59,15 +60,22 @@ public class LayDiaDiem extends HttpServlet {
                 totalPages = (int) Math.ceil((double) totalRecords / limit);
 
                 // 2. Lấy dữ liệu phân trang
-                String sqlData = "SELECT * FROM DiaDiem WHERE id_city = ?";
+
+                String sqlData = "SELECT d.*, IF(s.username IS NOT NULL, 'true', 'false') as da_thich " +
+                        "FROM DiaDiem d " +
+                        "LEFT JOIN SoThich s ON d.id = s.id_dia_diem AND s.username = ? " +
+                        "WHERE d.id_city = ?";
+
                 if (typeId != null && !typeId.equals("0")) {
-                    sqlData += " AND id_loai_hinh = ?";
+                    sqlData += " AND d.id_loai_hinh = ?";
                 }
                 sqlData += " LIMIT ? OFFSET ?";
 
                 PreparedStatement stmtData = conn.prepareStatement(sqlData);
                 int paramIndex = 1;
-                stmtData.setString(paramIndex++, idCity);
+                stmtData.setString(paramIndex++, username); // Tham số 1: username
+                stmtData.setString(paramIndex++, idCity);   // Tham số 2: id_city
+
                 if (typeId != null && !typeId.equals("0")) {
                     stmtData.setString(paramIndex++, typeId);
                 }
@@ -79,11 +87,16 @@ public class LayDiaDiem extends HttpServlet {
 
                 while (rs.next()) {
                     if (!isFirst) jsonBody.append(",");
+
+                    // Lấy trạng thái thích
+                    boolean isFav = Boolean.parseBoolean(rs.getString("da_thich"));
+
                     jsonBody.append("{")
                             .append("\"id\":").append(rs.getInt("id")).append(",")
                             .append("\"ten\":\"").append(rs.getString("ten_dia_diem")).append("\",")
                             .append("\"diachi\":\"").append(rs.getString("dia_chi")).append("\",")
-                            .append("\"loai\":\"").append(rs.getString("loai_hinh")).append("\"")
+                            .append("\"loai\":\"").append(rs.getString("loai_hinh")).append("\",")
+                            .append("\"is_fav\":").append(isFav) // Thêm trường này vào JSON
                             .append("}");
                     isFirst = false;
                 }
