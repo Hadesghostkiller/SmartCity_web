@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thông tin Thành Phố</title>
+</head>
+<body>
+<label>Chuyển đến thành phố khác:</label>
+<select id="citySelect">
+    <option value="">-- Chọn thành phố --</option>
+</select>
+<button id="btnSwitch">Đi</button>
+<span id="userHello"></span>
+<span style="float: right;">
+        <a href="login.html">Đăng xuất</a>
+    </span>
+
+<hr>
+
+<div id="content">
+    <h1 id="tenTP">Đang tải tên...</h1>
+
+    <h3>Đánh giá: <span id="soSao" style="color: orange; font-weight: bold;">0.0</span> / 5.0 ⭐</h3>
+    <div id="ratingArea" style="margin-top: 10px; border: 1px dashed #ccc; padding: 10px; width: fit-content;">
+        <b>Tôi cũng muốn đánh giá:</b><br>
+        <select id="myRate">
+            <option value="5">5 sao - Tuyệt vời</option>
+            <option value="4">4 sao - Tốt</option>
+            <option value="3">3 sao - Bình thường</option>
+            <option value="2">2 sao - Tệ</option>
+            <option value="1">1 sao - Quá tệ</option>
+        </select>
+        <button id="btnRate">Gửi đánh giá</button>
+    </div>
+    <p><b>Mô tả:</b></p>
+    <p id="moTaTP">Đang tải mô tả...</p>
+
+    <hr>
+
+    <h3>Khám phá địa điểm:</h3>
+    <div class="tabs">
+        <button onclick="changeType(0)" id="btnType0">Tất cả</button>
+        <button onclick="changeType(1)" id="btnType1">Nhà hàng</button>
+        <button onclick="changeType(2)" id="btnType2">Khách sạn</button>
+        <button onclick="changeType(3)" id="btnType3">Vui chơi</button>
+        <button onclick="changeType(4)" id="btnType4">Du lịch</button>
+        <button onclick="changeType(5)" id="btnType5">Mua sắm</button>
+    </div>
+
+    <br>
+    <div id="listDiaDiem">
+        <p>Đang tải dữ liệu...</p>
+    </div>
+
+    <div>
+        <button onclick="changePage(-1)" id="btnPrev">Trang trước</button>
+        <span id="pageInfo">Trang 1 / 1</span>
+        <button onclick="changePage(1)" id="btnNext">Trang sau</button>
+    </div>
+
+    <script src="thanhpho.js"></script>
+    </body>
+</html>

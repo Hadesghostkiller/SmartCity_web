@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Chi Tiết Địa Điểm</title>
+</head>
+<body>
+<div style="text-align: right;">
+    <span id="userHello"></span> | <a href="login.html">Đăng xuất</a>
+</div>
+<hr>
+
+<div id="mainContent">
+    <h1 id="ddTen">Đang tải tên...</h1>
+    <h3 style="color: #ff9800;">
+        Đánh giá: <span id="ddSao">0.0</span> ⭐
+    </h3>
+    <p><b>Phân loại:</b> <span id="ddLoai">...</span></p>
+    <p><b>Địa chỉ:</b> <span id="ddDiaChi">...</span></p>
+    <br>
+    <p><b>Giới thiệu:</b></p>
+    <p id="ddMoTa" style="line-height: 1.6;">Đang tải mô tả...</p>
+</div>
+
+<br><hr>
+<br><hr>
+
+<div style="background-color: #f9f9f9; padding: 10px; border-radius: 5px;">
+    <h3>📌 Có thể bạn cũng thích:</h3>
+    <div id="recommendList">Đang tải gợi ý...</div>
+</div>
+
+<br>
+
+<h3>💬 Đánh giá từ cộng đồng:</h3>
+
+<div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 20px;">
+    <b>Viết đánh giá của bạn:</b><br><br>
+
+    <label>Chấm điểm:</label>
+    <select id="cmtRate">
+        <option value="5">5 ⭐ - Tuyệt vời</option>
+        <option value="4">4 ⭐ - Tốt</option>
+        <option value="3">3 ⭐ - Bình thường</option>
+        <option value="2">2 ⭐ - Tệ</option>
+        <option value="1">1 ⭐ - Quá tệ</option>
+    </select>
+    <br><br>
+
+    <textarea id="cmtText" rows="3" style="width: 100%;" placeholder="Chia sẻ trải nghiệm của bạn tại đây..."></textarea>
+    <br><br>
+    <button id="btnSendComment">Gửi Đánh Giá</button>
+</div>
+
+<div id="commentList">
+</div>
+
+<br><hr>
+```
+<button id="btnBack">Quay lại Thành Phố</button>
+
+<script src="DiaDiem.js"></script>
+</body>
+</html>
