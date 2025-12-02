@@ -31,7 +31,9 @@ public class GuiBinhLuan extends HttpServlet {
         if (conn != null) {
             try {
                 // Cho phép comment nhiều lần, không cần check trùng
-                String sql = "INSERT INTO Danhgia_diadiem (username, id_dia_diem, rate_point, comment) VALUES (?, ?, ?, ?)";
+                // Thêm cột ngay_danh_gia vào và dùng hàm DATE_ADD để cộng 7 tiếng
+                String sql = "INSERT INTO Danhgia_diadiem (username, id_dia_diem, rate_point, comment, ngay_danh_gia) " +
+                        "VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 HOUR))";
                 PreparedStatement stmt = conn.prepareStatement(sql);
                 stmt.setString(1, u);
                 stmt.setString(2, idDiaDiem);

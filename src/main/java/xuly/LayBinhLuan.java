@@ -1,5 +1,6 @@
 package xuly;
-
+import java.util.TimeZone;
+import java.text.SimpleDateFormat;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -37,17 +38,23 @@ public class LayBinhLuan extends HttpServlet {
                 stmt.setString(1, idDiaDiem);
                 ResultSet rs = stmt.executeQuery();
 
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+                sdf.setTimeZone(TimeZone.getTimeZone("Asia/Ho_Chi_Minh")); // Set giờ VN
+
                 boolean isFirst = true;
                 while (rs.next()) {
                     if (!isFirst) jsonBody.append(",");
                     String comment = rs.getString("comment");
                     if(comment != null) comment = comment.replace("\"", "\\\"").replace("\n", " ");
 
+                    // Lấy thời gian và định dạng lại
+                    String thoiGianDep = sdf.format(rs.getTimestamp("ngay_danh_gia"));
+
                     jsonBody.append("{")
-                            .append("\"user\":\"").append(rs.getString("ho_ten")).append("\",") // Lấy ho_ten thay vì username
+                            .append("\"user\":\"").append(rs.getString("ho_ten")).append("\",")
                             .append("\"rate\":").append(rs.getInt("rate_point")).append(",")
                             .append("\"comment\":\"").append(comment).append("\",")
-                            .append("\"ngay\":\"").append(rs.getTimestamp("ngay_danh_gia")).append("\"")
+                            .append("\"ngay\":\"").append(thoiGianDep).append("\"") // Dùng biến thời gian mới
                             .append("}");
                     isFirst = false;
                 }
