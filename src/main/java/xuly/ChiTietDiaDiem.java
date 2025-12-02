@@ -22,6 +22,7 @@ public class ChiTietDiaDiem extends HttpServlet {
         PrintWriter out = resp.getWriter();
 
         String id = req.getParameter("id");
+        String username = req.getParameter("user"); // Nhận username
         Connection conn = KetNoiCSDL.layKetNoi();
         String jsonResult = "{}";
 
@@ -42,20 +43,30 @@ public class ChiTietDiaDiem extends HttpServlet {
 
                     if(moTa != null) moTa = moTa.replace("\"", "\\\"").replace("\n", " ");
 
-                    // 2. Tính rate trung bình
+                    // 2. Tính điểm trung bình
                     String sqlRate = "SELECT AVG(rate_point) as diem_tb FROM Danhgia_diadiem WHERE id_dia_diem = ?";
                     PreparedStatement stmtRate = conn.prepareStatement(sqlRate);
                     stmtRate.setString(1, id);
                     ResultSet rsRate = stmtRate.executeQuery();
 
                     double diemTB = 0;
-                    if (rsRate.next()) {
-                        diemTB = rsRate.getDouble("diem_tb");
-                    }
+                    if (rsRate.next()) diemTB = rsRate.getDouble("diem_tb");
                     DecimalFormat df = new DecimalFormat("#.0");
                     String sao = df.format(diemTB);
 
-                    // Trả về JSON có thêm trường "sao"
+                    // 3. KIỂM TRA ĐÃ THÍCH CHƯA
+                    boolean isFav = false;
+                    if (username != null && !username.isEmpty() && !username.equals("null")) {
+                        String sqlFav = "SELECT COUNT(*) FROM SoThich WHERE username = ? AND id_dia_diem = ?";
+                        PreparedStatement stmtFav = conn.prepareStatement(sqlFav);
+                        stmtFav.setString(1, username);
+                        stmtFav.setString(2, id);
+                        ResultSet rsFav = stmtFav.executeQuery();
+                        if (rsFav.next() && rsFav.getInt(1) > 0) {
+                            isFav = true;
+                        }
+                    }
+
                     jsonResult = "{" +
                             "\"status\": \"success\"," +
                             "\"ten\": \"" + ten + "\"," +
@@ -63,7 +74,8 @@ public class ChiTietDiaDiem extends HttpServlet {
                             "\"mota\": \"" + moTa + "\"," +
                             "\"loai\": \"" + loaiHinh + "\"," +
                             "\"id_city\": " + idCity + "," +
-                            "\"sao\": \"" + sao + "\"" +
+                            "\"sao\": \"" + sao + "\"," +
+                            "\"is_fav\": " + isFav + // Trả về true/false
                             "}";
                 } else {
                     jsonResult = "{\"status\": \"fail\", \"message\": \"Không tìm thấy địa điểm\"}";

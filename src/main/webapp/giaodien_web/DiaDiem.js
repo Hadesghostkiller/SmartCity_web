@@ -18,7 +18,7 @@ if (!idDiaDiem) {
 }
 //Ngu
 // Gọi API lấy chi tiết
-fetch('/SMcity/api/chi-tiet-dia-diem?id=' + idDiaDiem)
+fetch('/SMcity/api/chi-tiet-dia-diem?id=' + idDiaDiem + '&user=' + currentUser)
     .then(res => res.json())
     .then(data => {
         if (data.status === "success") {
@@ -27,7 +27,7 @@ fetch('/SMcity/api/chi-tiet-dia-diem?id=' + idDiaDiem)
             document.getElementById('ddLoai').innerText = data.loai;
             document.getElementById('ddDiaChi').innerText = data.diachi;
             document.getElementById('ddMoTa').innerText = data.mota;
-
+            initFavoriteButton(data.is_fav);
             // Cấu hình nút Quay lại về đúng thành phố ID cũ
             document.getElementById('btnBack').onclick = function() {
                 window.location.href = "thanhpho.html?id=" + data.id_city;
@@ -118,6 +118,62 @@ document.getElementById('btnSendComment').addEventListener('click', function() {
             }
         });
 });
+
+// ==================================================================
+// ------------------------LOGIC SỞ THÍCH---------------------------
+// ==================================================================
+function updateFavoriteUI(isFav) {
+    const btn = document.getElementById('btnFavorite');
+    if (isFav) {
+        btn.innerHTML = '✅ Đã thêm vào Sở thích';
+        btn.style.backgroundColor = '#d4edda';
+        btn.style.color = '#155724';
+    } else {
+        btn.innerHTML = '🤍 Thêm vào Sở thích';
+        btn.style.backgroundColor = '#f8d7da';
+        btn.style.color = '#721c24';
+    }
+}
+
+document.getElementById('btnFavorite').addEventListener('click', function() {
+    fetch('/SMcity/api/xu-ly-so-thich', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `username=${currentUser}&id_dia_diem=${idDiaDiem}`
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "success") {
+                // Nếu action là 'added' -> true, 'removed' -> false
+                const isAdded = (data.action === "added");
+                updateFavoriteUI(isAdded);
+            }
+        });
+});
+
+// GỌI API CHI TIẾT (SỬA ĐOẠN NÀY)
+// Thêm tham số &user=... vào URL
+fetch('/SMcity/api/chi-tiet-dia-diem?id=' + idDiaDiem + '&user=' + currentUser)
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "success") {
+            document.getElementById('ddTen').innerText = data.ten;
+            document.getElementById('ddSao').innerText = data.sao;
+            document.getElementById('ddLoai').innerText = data.loai;
+            document.getElementById('ddDiaChi').innerText = data.diachi;
+            document.getElementById('ddMoTa').innerText = data.mota;
+
+            // QUAN TRỌNG: Cập nhật nút theo trạng thái thật từ Database
+            updateFavoriteUI(data.is_fav);
+
+            document.getElementById('btnBack').onclick = function() {
+                window.location.href = "thanhpho.html?id=" + data.id_city;
+            };
+        } else {
+            alert("Lỗi: " + data.message);
+        }
+    })
+    .catch(err => console.log(err));
 
 // GỌI CÁC HÀM NÀY KHI VÀO TRANG
 loadRecommendation();
