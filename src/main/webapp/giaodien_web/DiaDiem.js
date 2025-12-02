@@ -16,7 +16,7 @@ if (!idDiaDiem) {
     alert("Không xác định được địa điểm!");
     window.location.href = "chonThanhPho.html";
 }
-
+//Ngu
 // Gọi API lấy chi tiết
 fetch('/SMcity/api/chi-tiet-dia-diem?id=' + idDiaDiem)
     .then(res => res.json())
