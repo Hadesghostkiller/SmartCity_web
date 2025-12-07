@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản Trị Admin</title>
+    <style>
+        /* CSS tối giản hết mức có thể để chia khung */
+        body { display: flex; font-family: sans-serif; }
+        .sidebar { width: 200px; border-right: 1px solid #000; padding: 10px; height: 100vh; }
+        .content { flex: 1; padding: 20px; }
+        .toolbar { margin-bottom: 10px; padding: 5px; border: 1px solid #000; background: #eee; }
+        .selected-row { background-color: #ffff99; } /* Màu vàng nhạt khi chọn dòng */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 5px; cursor: pointer; } /* Con trỏ tay để biết bấm được */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-box { background: white; width: 300px; margin: 100px auto; padding: 20px; border: 1px solid #000; }
+        button { cursor: pointer; padding: 5px 10px; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h3>MENU ADMIN</h3>
+    <p><a href="#" onclick="showTab('users')">Quản lý User</a></p>
+    <p><a href="#" onclick="showTab('places')">Quản lý Địa điểm</a></p>
+    <hr>
+    <p><a href="chonThanhPho.html">Về trang chủ</a></p>
+</div>
+
+<div class="content">
+
+    <div id="tab-users">
+        <h3>Danh sách Người Dùng</h3>
+
+        <div class="toolbar">
+            <input type="text" id="searchUser" placeholder="Tìm kiếm...">
+            <button onclick="loadUsers()">Tìm</button> |
+            <button onclick="openModal('modalAddUser')">➕ Thêm</button>
+            <button onclick="confirmDeleteUser()">➖ Xóa</button>
+            <span id="lblSelectedUser" style="margin-left: 10px; color: red;">(Chưa chọn dòng nào)</span>
+        </div>
+
+        <table border="1">
+            <thead><tr><th>Username</th><th>Họ tên</th></tr></thead>
+            <tbody id="tblUsers"></tbody>
+        </table>
+
+        <div style="margin-top: 10px;">
+            <button onclick="changePageUser(-1)"> < Trước </button>
+            <span id="pageInfoUser">Trang 1</span>
+            <button onclick="changePageUser(1)"> Sau > </button>
+        </div>
+    </div>
+
+    <div id="tab-places" style="display: none;">
+        <h3>Danh sách Địa Điểm</h3>
+
+        <label>Chọn TP:</label>
+        <select id="adminCitySelect" onchange="loadPlaces()"></select>
+        <br><br>
+
+        <div class="toolbar">
+            <button onclick="openModal('modalAddPlace')">➕ Thêm</button>
+            <button onclick="confirmDeletePlace()">➖ Xóa</button>
+            <span id="lblSelectedPlace" style="margin-left: 10px; color: red;">(Chưa chọn dòng nào)</span>
+        </div>
+
+        <table border="1">
+            <thead><tr><th>ID</th><th>Tên</th><th>Loại</th></tr></thead>
+            <tbody id="tblPlaces"></tbody>
+        </table>
+
+        <div style="margin-top: 10px;">
+            <button onclick="changePagePlace(-1)"> < Trước </button>
+            <span id="pageInfoPlace">Trang 1</span>
+            <button onclick="changePagePlace(1)"> Sau > </button>
+        </div>
+    </div>
+</div>
+
+<div id="modalAddUser" class="modal">
+    <div class="modal-box">
+        <h4>Thêm User Mới</h4>
+        User: <input type="text" id="new_u"><br><br>
+        Pass: <input type="password" id="new_p"><br><br>
+        Tên: <input type="text" id="new_n"><br><br>
+        <button onclick="addUser()">Lưu</button>
+        <button onclick="closeModal('modalAddUser')">Hủy</button>
+    </div>
+</div>
+
+<div id="modalAddPlace" class="modal">
+    <div class="modal-box">
+        <h4>Thêm Địa Điểm</h4>
+        Tên: <input type="text" id="p_ten"><br><br>
+        Đ/C: <input type="text" id="p_dc"><br><br>
+        Loại: <input type="text" id="p_loai" placeholder="VD: Nhà hàng"><br><br>
+        Mô tả: <textarea id="p_mota"></textarea><br><br>
+        <button onclick="addPlace()">Lưu</button>
+        <button onclick="closeModal('modalAddPlace')">Hủy</button>
+    </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>

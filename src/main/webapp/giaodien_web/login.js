@@ -13,6 +13,7 @@ document.getElementById('btn').addEventListener('click', function() {
             if(data.status == "success") {
                 localStorage.setItem("currentUser", document.getElementById('user').value); // Lưu username
                 localStorage.setItem("currentFullName", data.ten);
+                localStorage.setItem("currentRole", data.role);
                 window.location.href = "chonThanhPho.html";
             } else {
                 alert("Lỗi: " + data.message);
