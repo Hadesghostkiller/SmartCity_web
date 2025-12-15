@@ -5,15 +5,10 @@ if (role != 1) {
     window.location.href = "chonThanhPho.html";
 }
 
-// Biến toàn cục
 let pageUser = 1;
 let pagePlace = 1;
 let totalPageUser = 1;
 let totalPagePlace = 1;
-
-// Biến lưu dòng đang chọn
-let selectedUser = null;
-let selectedPlaceId = null;
 
 // --- HÀM CHUNG ---
 function showTab(tab) {
@@ -25,62 +20,41 @@ function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
 // ================= USER =================
 
-// 1. Tải danh sách
 function loadUsers() {
     const kw = document.getElementById('searchUser').value;
     fetch(`/SMcity/api/admin-user?page=${pageUser}&q=${kw}`)
         .then(res => res.json())
         .then(res => {
             let html = "";
-            totalPageUser = res.total_pages; // Lưu tổng số trang để check nút Next
+            totalPageUser = res.total_pages;
 
             res.data.forEach(u => {
-                // Thêm sự kiện onclick để chọn dòng
-                html += `<tr onclick="selectRowUser(this, '${u.user}')">
+                html += `<tr>
                 <td>${u.user}</td>
                 <td>${u.ten}</td>
+                <td style="text-align:center;">
+                    <button onclick="deleteUser('${u.user}')" style="color:red;">🗑</button>
+                </td>
             </tr>`;
             });
             document.getElementById('tblUsers').innerHTML = html;
             document.getElementById('pageInfoUser').innerText = `Trang ${pageUser} / ${totalPageUser}`;
-
-            // Reset lựa chọn
-            selectedUser = null;
-            document.getElementById('lblSelectedUser').innerText = "(Chưa chọn dòng nào)";
         });
 }
 
-// 2. Chọn dòng (Tô màu)
-function selectRowUser(row, username) {
-    // Xóa màu cũ
-    let rows = document.getElementById('tblUsers').getElementsByTagName('tr');
-    for(let i=0; i<rows.length; i++) rows[i].classList.remove('selected-row');
-
-    // Tô màu mới
-    row.classList.add('selected-row');
-    selectedUser = username;
-    document.getElementById('lblSelectedUser').innerText = "Đang chọn: " + username;
-}
-
-// 3. Xử lý nút [-] Xóa
-function confirmDeleteUser() {
-    if (!selectedUser) {
-        alert("Vui lòng chọn một dòng để xóa!");
-        return;
-    }
-    if (confirm("Bạn chắc chắn muốn xóa user: " + selectedUser + " không?")) {
+function deleteUser(username) {
+    if (confirm("Xóa user: " + username + "?")) {
         fetch('/SMcity/api/admin-user', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `action=delete&username=${selectedUser}`
+            body: `action=delete&username=${username}`
         }).then(res => res.json()).then(data => {
             alert(data.message);
-            loadUsers(); // Tải lại bảng
+            loadUsers();
         });
     }
 }
 
-// 4. Xử lý nút [+] Thêm
 function addUser() {
     const u = document.getElementById('new_u').value;
     const p = document.getElementById('new_p').value;
@@ -95,7 +69,6 @@ function addUser() {
     });
 }
 
-// 5. Chuyển trang User (Sửa lỗi cũ)
 function changePageUser(step) {
     let nextPage = pageUser + step;
     if (nextPage >= 1 && nextPage <= totalPageUser) {
@@ -107,7 +80,7 @@ function changePageUser(step) {
 
 // ================= ĐỊA ĐIỂM =================
 
-// Load list thành phố vào dropdown
+// Load list thành phố
 fetch('/SMcity/api/danh-sach-thanh-pho').then(res=>res.json()).then(data => {
     let sel = document.getElementById('adminCitySelect');
     data.forEach(c => {
@@ -127,58 +100,83 @@ function loadPlaces() {
             totalPagePlace = res.total_pages;
 
             res.data.forEach(p => {
-                html += `<tr onclick="selectRowPlace(this, ${p.id}, '${p.ten}')">
+                // Xử lý chuỗi an toàn
+                let safeName = p.ten.replace(/'/g, "\\'");
+                let safeAddr = p.diachi.replace(/'/g, "\\'");
+                let safeDesc = "";
+                if(p.mota) safeDesc = p.mota.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+
+                html += `<tr>
                 <td>${p.id}</td>
-                <td>${p.ten}</td>
-                <td>${p.loai}</td>
+                <td><b>${p.ten}</b><br><small>${p.diachi}</small></td>
+                <td>${p.ten_loai}</td>
+                <td style="text-align:center;">
+                    <button class="btn-action" onclick="openEditModal(${p.id}, '${safeName}', '${safeAddr}', ${p.id_loai}, '${safeDesc}')">✏️</button>
+                    <button class="btn-action" onclick="deletePlace(${p.id})" style="color:red;">🗑</button>
+                </td>
             </tr>`;
             });
             document.getElementById('tblPlaces').innerHTML = html;
             document.getElementById('pageInfoPlace').innerText = `Trang ${pagePlace} / ${totalPagePlace}`;
-
-            selectedPlaceId = null;
-            document.getElementById('lblSelectedPlace').innerText = "(Chưa chọn dòng nào)";
         });
 }
 
-function selectRowPlace(row, id, name) {
-    let rows = document.getElementById('tblPlaces').getElementsByTagName('tr');
-    for(let i=0; i<rows.length; i++) rows[i].classList.remove('selected-row');
-
-    row.classList.add('selected-row');
-    selectedPlaceId = id;
-    document.getElementById('lblSelectedPlace').innerText = "Đang chọn: " + name;
-}
-
-function confirmDeletePlace() {
-    if (!selectedPlaceId) {
-        alert("Vui lòng chọn địa điểm để xóa!");
-        return;
-    }
-    if (confirm("Xóa địa điểm này sẽ mất hết đánh giá. Tiếp tục?")) {
-        fetch('/SMcity/api/admin-diadiem', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `action=delete&id=${selectedPlaceId}`
-        }).then(res => res.json()).then(data => { alert(data.message); loadPlaces(); });
-    }
-}
-
+// Sửa lỗi ID null: Hàm này đảm bảo lấy đúng giá trị từ select box p_loai
 function addPlace() {
     const idCity = document.getElementById('adminCitySelect').value;
     const ten = document.getElementById('p_ten').value;
     const dc = document.getElementById('p_dc').value;
-    const loai = document.getElementById('p_loai').value;
+
+    // Lấy ID loại hình (1,2,3,4,5)
+    const idLoai = document.getElementById('p_loai').value;
+
     const mota = document.getElementById('p_mota').value;
 
     fetch('/SMcity/api/admin-diadiem', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `action=add&id_city=${idCity}&ten=${ten}&diachi=${dc}&loai=${loai}&mota=${mota}`
+        // Gửi tham số tên là "id_loai" để khớp với Servlet
+        body: `action=add&id_city=${idCity}&ten=${ten}&diachi=${dc}&id_loai=${idLoai}&mota=${mota}`
     }).then(res => res.json()).then(data => {
         alert(data.message);
         if(data.status==='success') { closeModal('modalAddPlace'); loadPlaces(); }
     });
+}
+
+function openEditModal(id, ten, diachi, idLoai, mota) {
+    document.getElementById('e_id').value = id;
+    document.getElementById('e_ten').value = ten;
+    document.getElementById('e_dc').value = diachi;
+    document.getElementById('e_loai').value = idLoai;
+    document.getElementById('e_mota').value = mota;
+    openModal('modalEditPlace');
+}
+
+function updatePlace() {
+    const id = document.getElementById('e_id').value;
+    const ten = document.getElementById('e_ten').value;
+    const dc = document.getElementById('e_dc').value;
+    const loai = document.getElementById('e_loai').value;
+    const mota = document.getElementById('e_mota').value;
+
+    fetch('/SMcity/api/admin-diadiem', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `action=update&id=${id}&ten=${ten}&diachi=${dc}&id_loai=${loai}&mota=${mota}`
+    }).then(res => res.json()).then(data => {
+        alert(data.message);
+        if(data.status==='success') { closeModal('modalEditPlace'); loadPlaces(); }
+    });
+}
+
+function deletePlace(id) {
+    if(confirm("Xóa địa điểm này?")) {
+        fetch('/SMcity/api/admin-diadiem', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `action=delete&id=${id}`
+        }).then(res => res.json()).then(data => { alert(data.message); loadPlaces(); });
+    }
 }
 
 function changePagePlace(step) {
@@ -189,5 +187,5 @@ function changePagePlace(step) {
     }
 }
 
-// Chạy mặc định
+// Chạy mặc định khi tải trang
 loadUsers();
