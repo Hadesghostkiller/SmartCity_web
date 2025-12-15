@@ -22,14 +22,16 @@ public class ChiTietDiaDiem extends HttpServlet {
         PrintWriter out = resp.getWriter();
 
         String id = req.getParameter("id");
-        String username = req.getParameter("user"); // Nhận username
+        String username = req.getParameter("user");
         Connection conn = KetNoiCSDL.layKetNoi();
         String jsonResult = "{}";
 
         if (conn != null && id != null) {
             try {
-                // 1. Lấy thông tin địa điểm
-                String sql = "SELECT * FROM DiaDiem WHERE id = ?";
+                // 1. Lấy thông tin địa điểm (JOIN BẢNG LOAIHINH)
+                String sql = "SELECT d.*, l.ten_loai_hinh FROM DiaDiem d " +
+                        "LEFT JOIN LoaiHinh l ON d.id_loai_hinh = l.id " +
+                        "WHERE d.id = ?";
                 PreparedStatement stmt = conn.prepareStatement(sql);
                 stmt.setString(1, id);
                 ResultSet rs = stmt.executeQuery();
@@ -38,7 +40,11 @@ public class ChiTietDiaDiem extends HttpServlet {
                     String ten = rs.getString("ten_dia_diem");
                     String diaChi = rs.getString("dia_chi");
                     String moTa = rs.getString("mo_ta");
-                    String loaiHinh = rs.getString("loai_hinh");
+
+                    // Lấy tên loại hình chuẩn
+                    String loaiHinh = rs.getString("ten_loai_hinh");
+                    if(loaiHinh == null) loaiHinh = "Khác";
+
                     int idCity = rs.getInt("id_city");
 
                     if(moTa != null) moTa = moTa.replace("\"", "\\\"").replace("\n", " ");
@@ -54,7 +60,7 @@ public class ChiTietDiaDiem extends HttpServlet {
                     DecimalFormat df = new DecimalFormat("#.0");
                     String sao = df.format(diemTB);
 
-                    // 3. KIỂM TRA ĐÃ THÍCH CHƯA
+                    // 3. Kiểm tra yêu thích
                     boolean isFav = false;
                     if (username != null && !username.isEmpty() && !username.equals("null")) {
                         String sqlFav = "SELECT COUNT(*) FROM SoThich WHERE username = ? AND id_dia_diem = ?";
@@ -62,9 +68,7 @@ public class ChiTietDiaDiem extends HttpServlet {
                         stmtFav.setString(1, username);
                         stmtFav.setString(2, id);
                         ResultSet rsFav = stmtFav.executeQuery();
-                        if (rsFav.next() && rsFav.getInt(1) > 0) {
-                            isFav = true;
-                        }
+                        if (rsFav.next() && rsFav.getInt(1) > 0) isFav = true;
                     }
 
                     jsonResult = "{" +
@@ -72,18 +76,16 @@ public class ChiTietDiaDiem extends HttpServlet {
                             "\"ten\": \"" + ten + "\"," +
                             "\"diachi\": \"" + diaChi + "\"," +
                             "\"mota\": \"" + moTa + "\"," +
-                            "\"loai\": \"" + loaiHinh + "\"," +
+                            "\"loai\": \"" + loaiHinh + "\"," + // Trả về tên loại hình chuẩn
                             "\"id_city\": " + idCity + "," +
                             "\"sao\": \"" + sao + "\"," +
-                            "\"is_fav\": " + isFav + // Trả về true/false
+                            "\"is_fav\": " + isFav +
                             "}";
                 } else {
                     jsonResult = "{\"status\": \"fail\", \"message\": \"Không tìm thấy địa điểm\"}";
                 }
                 conn.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            } catch (Exception e) { e.printStackTrace(); }
         }
         out.print(jsonResult);
         out.flush();

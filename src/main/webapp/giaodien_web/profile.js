@@ -1,5 +1,17 @@
 const currentUser = localStorage.getItem("currentUser");
 if (!currentUser) window.location.href = "login.html";
+const currentRole = localStorage.getItem("currentRole");
+if (currentRole == 1) {
+    const adminDiv = document.getElementById('adminArea');
+    if (adminDiv) {
+        adminDiv.innerHTML = `
+            <button onclick="window.location.href='admin.html'" 
+                    style="background-color: #dc3545; color: white; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; border-radius: 5px;">
+                🛠 TRUY CẬP TRANG QUẢN TRỊ VIÊN
+            </button>
+        `;
+    }
+}
 
 document.getElementById('lblUser').innerText = currentUser;
 

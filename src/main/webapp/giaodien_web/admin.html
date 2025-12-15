@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản Trị Admin</title>
+    <style>
+        body { display: flex; font-family: sans-serif; margin: 0; }
+        .sidebar { width: 200px; background: #f4f4f4; border-right: 1px solid #ccc; padding: 20px; height: 100vh; box-sizing: border-box; }
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+
+        /* CSS Modal nhỏ gọn lại */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal-box {
+            background: white;
+            width: 350px; /* Thu nhỏ chiều rộng */
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+        input, select, textarea { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+
+        /* CSS Bảng */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+
+        /* Thu nhỏ cột hành động */
+        th:last-child, td:last-child { width: 80px; text-align: center; }
+
+        button { cursor: pointer; padding: 5px 10px; }
+        .btn-action { margin: 0 2px; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <h3>MENU ADMIN</h3>
+    <p><a href="#" onclick="showTab('users')">Quản lý User</a></p>
+    <p><a href="#" onclick="showTab('places')">Quản lý Địa điểm</a></p>
+    <hr>
+    <p><a href="chonThanhPho.html">Về trang chủ</a></p>
+</div>
+
+<div class="content">
+    <div id="tab-users">
+        <h3>Danh sách Người Dùng</h3>
+        <div style="margin-bottom: 10px;">
+            <input type="text" id="searchUser" placeholder="Tìm user..." style="width: 200px; display:inline-block;">
+            <button onclick="loadUsers()">Tìm</button>
+            <button onclick="openModal('modalAddUser')" style="background:#28a745; color:white;">+ Thêm</button>
+        </div>
+        <table>
+            <thead><tr><th>Username</th><th>Họ tên</th><th>Xử lý</th></tr></thead>
+            <tbody id="tblUsers"></tbody>
+        </table>
+        <div style="margin-top: 10px; text-align: center;">
+            <button onclick="changePageUser(-1)"> < Trước </button>
+            <span id="pageInfoUser">1</span>
+            <button onclick="changePageUser(1)"> Sau > </button>
+        </div>
+    </div>
+
+    <div id="tab-places" style="display: none;">
+        <h3>Danh sách Địa Điểm</h3>
+        <label>Thành phố:</label>
+        <select id="adminCitySelect" onchange="loadPlaces()" style="width: 200px; display:inline-block;"></select>
+        <button onclick="openModal('modalAddPlace')" style="background:#28a745; color:white; margin-left:10px;">+ Thêm</button>
+
+        <table>
+            <thead><tr><th>ID</th><th>Tên</th><th>Loại</th><th>Sửa/Xóa</th></tr></thead>
+            <tbody id="tblPlaces"></tbody>
+        </table>
+        <div style="margin-top: 10px; text-align: center;">
+            <button onclick="changePagePlace(-1)"> < Trước </button>
+            <span id="pageInfoPlace">1</span>
+            <button onclick="changePagePlace(1)"> Sau > </button>
+        </div>
+    </div>
+</div>
+
+<div id="modalAddUser" class="modal">
+    <div class="modal-box">
+        <h4>Thêm User</h4>
+        <input type="text" id="new_u" placeholder="Username">
+        <input type="password" id="new_p" placeholder="Password">
+        <input type="text" id="new_n" placeholder="Họ tên">
+        <div style="text-align: right;">
+            <button onclick="addUser()">Lưu</button>
+            <button onclick="closeModal('modalAddUser')">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalAddPlace" class="modal">
+    <div class="modal-box">
+        <h4>Thêm Địa Điểm</h4>
+        <input type="text" id="p_ten" placeholder="Tên địa điểm">
+        <input type="text" id="p_dc" placeholder="Địa chỉ">
+        <select id="p_loai">
+            <option value="1">Nhà hàng</option>
+            <option value="2">Khách sạn</option>
+            <option value="3">Vui chơi</option>
+            <option value="4">Du lịch</option>
+            <option value="5">Mua sắm</option>
+        </select>
+        <textarea id="p_mota" placeholder="Mô tả" rows="3"></textarea>
+        <div style="text-align: right;">
+            <button onclick="addPlace()">Lưu</button>
+            <button onclick="closeModal('modalAddPlace')">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<div id="modalEditPlace" class="modal">
+    <div class="modal-box">
+        <h4>Sửa Địa Điểm</h4>
+        <input type="hidden" id="e_id">
+        <input type="text" id="e_ten" placeholder="Tên">
+        <input type="text" id="e_dc" placeholder="Địa chỉ">
+        <select id="e_loai">
+            <option value="1">Nhà hàng</option>
+            <option value="2">Khách sạn</option>
+            <option value="3">Vui chơi</option>
+            <option value="4">Du lịch</option>
+            <option value="5">Mua sắm</option>
+        </select>
+        <textarea id="e_mota" rows="3"></textarea>
+        <div style="text-align: right;">
+            <button onclick="updatePlace()" style="background: blue; color: white;">Cập nhật</button>
+            <button onclick="closeModal('modalEditPlace')">Đóng</button>
+        </div>
+    </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
