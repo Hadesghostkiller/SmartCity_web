@@ -13,7 +13,6 @@ document.getElementById('btnSignup').addEventListener('click', function() {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'username=' + u + '&password=' + p + '&hoten=' + n
     })
-    
         .then(res => res.json())
         .then(data => {
             if(data.status == "success") {
@@ -24,15 +23,4 @@ document.getElementById('btnSignup').addEventListener('click', function() {
             }
         })
         .catch(err => console.log(err));
-})
-
-    fetch(url, { method: 'POST', body: data })
-        .then(response => {
-    if (!response.ok) {
-      throw new Error('HTTP error ' + response.status); // Bắt 405 ở đây
-    }
-    return response.json();
-        })
-    .then(data => { /* success */ })
-        .catch(error => { console.error(error); alert('Lỗi đăng ký: ' + error); });
-;
+});
