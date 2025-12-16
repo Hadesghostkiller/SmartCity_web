@@ -3,18 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Quên Mật Khẩu - SMcity</title>
+    <link rel="stylesheet" href="../styles.css">
 </head>
-<body>
-<h3>Lấy Lại Mật Khẩu</h3>
-<label>Nhập tên đăng nhập:</label><br>
-<input type="text" id="f_user"><br><br>
+<body class="login-body">
 
-<label>Nhập mật khẩu mới:</label><br>
-<input type="password" id="f_newpass"><br><br>
+<div class="login-container">
+    <h2 class="login-title">Recovery</h2>
 
-<button id="btnReset">Đổi Mật Khẩu</button>
-<br><br>
-<a href="login.html">Quay lại Đăng nhập</a>
+    <div class="input-group">
+        <label for="f_user" class="input-label">Username</label>
+        <input type="text" id="f_user" class="login-input" placeholder="Nhập tên đăng nhập...">
+    </div>
+
+    <div class="input-group">
+        <label for="f_newpass" class="input-label">New Pass</label>
+        <input type="password" id="f_newpass" class="login-input" placeholder="Nhập mật khẩu mới...">
+    </div>
+
+    <button id="btnReset" class="btn-login">Đổi Mật Khẩu</button>
+
+    <div class="links">
+        <a href="login.html">Quay lại Đăng nhập</a>
+    </div>
+</div>
 
 <script src="forgot.js"></script>
 </body>

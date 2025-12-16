@@ -1,0 +1,119 @@
+/* --- 1. LOAD FONT (Giữ nguyên như cũ) --- */
+@font-face {
+    font-family: 'Ubuntu';
+    src: url('font/Ubuntu-R.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'SpaceHabitat';
+    src: url('font/DFVN MBF Space Habitat Regular.otf') format('opentype');
+}
+@font-face {
+    font-family: 'AthenaSignature';
+    src: url('font/SVN-Athena-Signature.otf') format('opentype');
+}
+
+/* --- 2. CẤU TRÚC TRANG LOGIN --- */
+
+/* Nền trang và căn giữa khung */
+.login-body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Ubuntu', sans-serif;
+
+    /* Ảnh nền */
+    background-image: url('images/login_bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    /* Căn giữa khung đăng nhập vào chính giữa màn hình */
+    height: 100vh;
+    display: flex;
+    justify-content: center; /* Căn giữa ngang */
+    align-items: center;     /* Căn giữa dọc */
+}
+
+/* Khung đăng nhập nhỏ gọn */
+.login-container {
+    width: 350px; /* Độ rộng vừa phải */
+    padding: 30px;
+
+    /* Yêu cầu: Nền trắng trong suốt 80%, viền trắng */
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 2px solid white;
+
+    /* Nếu muốn bo góc nhẹ thì thêm border-radius, không thì để 0 */
+    border-radius: 5px;
+    text-align: center;
+    box-shadow: 0 0 15px rgba(0,0,0,0.2); /* Đổ bóng nhẹ cho đẹp */
+}
+
+/* Tiêu đề "Login" */
+.login-title {
+    font-family: 'SpaceHabitat', sans-serif;
+    font-size: 40px;
+    margin: 0 0 20px 0;
+    color: #333;
+}
+
+/* Nhóm input để căn chỉnh label và ô nhập */
+.input-group {
+    text-align: left;
+    margin-bottom: 15px;
+}
+
+/* Chữ "User" và "Pass" ở ngoài */
+.input-label {
+    display: block; /* Xuống dòng */
+    font-family: 'AthenaSignature', cursive; /* Font chữ ký */
+    font-size: 30px; /* Font chữ ký thường nét mảnh nên cần để to */
+    color: #000;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+/* Ô nhập liệu (Người dùng nhập vào đây) */
+.login-input {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box; /* Để padding không làm vỡ khung */
+    border: 1px solid #ccc;
+    border-radius: 3px;
+
+    /* Font Ubuntu để người dùng dễ nhìn thấy chữ mình gõ */
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 16px;
+}
+
+/* Nút Login */
+.btn-login {
+    width: 100%;
+    padding: 10px;
+    background-color: #333;
+    color: white;
+    border: none;
+    font-family: 'Ubuntu', sans-serif;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+.btn-login:hover {
+    background-color: #555;
+}
+
+/* Link đăng ký / quên mật khẩu */
+.links {
+    margin-top: 20px;
+    font-size: 14px;
+}
+
+.links a {
+    text-decoration: none;
+    color: #333;
+}
+.links a:hover {
+    color: blue;
+    text-decoration: underline;
+}

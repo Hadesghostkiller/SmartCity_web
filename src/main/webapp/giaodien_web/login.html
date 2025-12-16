@@ -1,17 +1,33 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <title>SMcity Login</title>
+    <link rel="stylesheet" href="../styles.css">
 </head>
-<body>
-<h3>Đăng nhập SMcity</h3>
-User: <input type="text" id="user"><br><br>
-Pass: <input type="password" id="pass"><br><br>
-<button id="btn">Login</button>
+<body class="login-body">
+
+<div class="login-container">
+    <h2 class="login-title">Login</h2>
+
+    <div class="input-group">
+        <label for="user" class="input-label">User</label>
+        <input type="text" id="user" class="login-input">
+    </div>
+
+    <div class="input-group">
+        <label for="pass" class="input-label">Pass</label>
+        <input type="password" id="pass" class="login-input">
+    </div>
+
+    <button id="btn" class="btn-login">Login</button>
+
+    <div class="links">
+        <a href="signup.html">Đăng ký tài khoản</a> |
+        <a href="forgot.html">Quên mật khẩu?</a>
+    </div>
+</div>
+
 <script src="login.js"></script>
-<br><br>
-<a href="signup.html">Đăng ký tài khoản</a> |
-<a href="forgot.html">Quên mật khẩu?</a>
 </body>
 </html>
