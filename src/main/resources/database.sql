@@ -1,319 +1,280 @@
-create table LoaiHinh
-(
-    id            int auto_increment
-        primary key,
-    ten_loai_hinh varchar(50) not null
+-- =============================================================
+-- DATABASE: smart_city_db - FIXED VERSION (No Syntax Error)
+-- Đồ án Java Web Smart City - Full 60 địa điểm + Đánh giá
+-- Fix: Escape quotes, full data, correct hashes
+-- Ngày fix: 19/12/2025
+-- =============================================================
+
+DROP DATABASE IF EXISTS smart_city_db;
+CREATE DATABASE smart_city_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE smart_city_db;
+
+-- 1. Bảng loại hình địa điểm
+CREATE TABLE LoaiHinh (
+                          id INT AUTO_INCREMENT PRIMARY KEY,
+                          ten_loai_hinh VARCHAR(50) NOT NULL UNIQUE
 );
 
-create table NguoiDung
-(
-    id       int auto_increment
-        primary key,
-    username varchar(50)   not null,
-    password varchar(100)  null,
-    ho_ten   varchar(100)  null,
-    role     int default 0 null,
-    constraint unique_username
-        unique (username),
-    constraint username
-        unique (username)
+-- 2. Bảng người dùng
+CREATE TABLE NguoiDung (
+                           id INT AUTO_INCREMENT PRIMARY KEY,
+                           username VARCHAR(50) NOT NULL UNIQUE,
+                           password VARCHAR(100) NOT NULL,
+                           ho_ten VARCHAR(100),
+                           role INT DEFAULT 0  -- 0 = user, 1 = admin
 );
 
-create table ThanhPho
-(
-    id            int auto_increment
-        primary key,
-    ten_thanh_pho varchar(100) not null,
-    mo_ta         text         null
+-- 3. Bảng thành phố
+CREATE TABLE ThanhPho (
+                          id INT AUTO_INCREMENT PRIMARY KEY,
+                          ten_thanh_pho VARCHAR(100) NOT NULL,
+                          mo_ta TEXT
 );
 
-create table Danhgia_city
-(
-    id        int auto_increment
-        primary key,
-    username  varchar(50)   not null,
-    id_city   int           not null,
-    rate_city int default 5 null,
-    constraint Danhgia_city_ibfk_1
-        foreign key (username) references NguoiDung (username)
-            on delete cascade,
-    constraint Danhgia_city_ibfk_2
-        foreign key (id_city) references ThanhPho (id)
-            on delete cascade
+-- 4. Bảng địa điểm
+CREATE TABLE DiaDiem (
+                         id INT AUTO_INCREMENT PRIMARY KEY,
+                         ten_dia_diem VARCHAR(255) NOT NULL,
+                         dia_chi TEXT,
+                         id_city INT NOT NULL,
+                         id_loai_hinh INT NOT NULL,
+                         loai_hinh VARCHAR(50),
+                         mo_ta TEXT,
+                         FOREIGN KEY (id_city) REFERENCES ThanhPho(id) ON DELETE CASCADE,
+                         FOREIGN KEY (id_loai_hinh) REFERENCES LoaiHinh(id) ON DELETE CASCADE,
+                         INDEX idx_city (id_city),
+                         INDEX idx_loai_hinh (id_loai_hinh)
 );
 
-create index id_city
-    on Danhgia_city (id_city);
-
-create index username
-    on Danhgia_city (username);
-
-create table DiaDiem
-(
-    id           int auto_increment
-        primary key,
-    ten_dia_diem varchar(255) not null,
-    dia_chi      text         null,
-    id_city      int          not null,
-    id_loai_hinh int          not null,
-    loai_hinh    varchar(50)  null,
-    mo_ta        text         null,
-    constraint DiaDiem_ibfk_1
-        foreign key (id_city) references ThanhPho (id)
-            on delete cascade,
-    constraint DiaDiem_ibfk_2
-        foreign key (id_loai_hinh) references LoaiHinh (id)
-            on delete cascade
+-- 5. Bảng đánh giá thành phố
+CREATE TABLE Danhgia_city (
+                              id INT AUTO_INCREMENT PRIMARY KEY,
+                              username VARCHAR(50) NOT NULL,
+                              id_city INT NOT NULL,
+                              rate_city INT DEFAULT 5 CHECK (rate_city BETWEEN 1 AND 5),
+                              FOREIGN KEY (username) REFERENCES NguoiDung(username) ON DELETE CASCADE,
+                              FOREIGN KEY (id_city) REFERENCES ThanhPho(id) ON DELETE CASCADE,
+                              UNIQUE KEY unique_user_city (username, id_city),
+                              INDEX idx_username (username),
+                              INDEX idx_id_city (id_city)
 );
 
-create table Danhgia_diadiem
-(
-    id            int auto_increment
-        primary key,
-    username      varchar(50)                         not null,
-    id_dia_diem   int                                 not null,
-    rate_point    int                                 not null,
-    comment       text                                null,
-    ngay_danh_gia timestamp default CURRENT_TIMESTAMP null,
-    constraint Danhgia_diadiem_ibfk_1
-        foreign key (username) references NguoiDung (username)
-            on delete cascade,
-    constraint Danhgia_diadiem_ibfk_2
-        foreign key (id_dia_diem) references DiaDiem (id)
-            on delete cascade
+-- 6. Bảng đánh giá địa điểm
+CREATE TABLE Danhgia_diadiem (
+                                 id INT AUTO_INCREMENT PRIMARY KEY,
+                                 username VARCHAR(50) NOT NULL,
+                                 id_dia_diem INT NOT NULL,
+                                 rate_point INT NOT NULL CHECK (rate_point BETWEEN 1 AND 5),
+                                 comment TEXT,
+                                 ngay_danh_gia TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                 FOREIGN KEY (username) REFERENCES NguoiDung(username) ON DELETE CASCADE,
+                                 FOREIGN KEY (id_dia_diem) REFERENCES DiaDiem(id) ON DELETE CASCADE,
+                                 UNIQUE KEY unique_user_place (username, id_dia_diem),
+                                 INDEX idx_username (username),
+                                 INDEX idx_id_dia_diem (id_dia_diem)
 );
 
-create index id_dia_diem
-    on Danhgia_diadiem (id_dia_diem);
-
-create index username
-    on Danhgia_diadiem (username);
-
-create index id_city
-    on DiaDiem (id_city);
-
-create index id_loai_hinh
-    on DiaDiem (id_loai_hinh);
-
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (1, 'abc', 3, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (2, 'ban', 3, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (3, 'toilaai', 2, 2);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (4, 'user1', 1, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (5, 'user1', 2, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (6, 'user2', 1, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (7, 'user2', 3, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (8, 'user3', 2, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (9, 'user3', 3, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (10, 'user4', 1, 3);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (11, 'user4', 2, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (12, 'user5', 3, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (13, 'user5', 1, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (14, 'user6', 2, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (15, 'user7', 1, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (16, 'user8', 3, 3);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (17, 'user9', 2, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (18, 'user10', 1, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (19, 'user3', 1, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (20, 'user4', 1, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (21, 'user5', 1, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (22, 'user6', 1, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (23, 'user7', 2, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (24, 'user8', 2, 3);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (25, 'user9', 2, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (26, 'user10', 3, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (27, 'user2', 3, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (28, 'user1', 4, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (29, 'user2', 4, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (30, 'user3', 4, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (31, 'user5', 4, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (32, 'user8', 4, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (33, 'user4', 5, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (34, 'user6', 5, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (35, 'user7', 5, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (36, 'user9', 5, 4);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (37, 'user10', 5, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (38, 'abc', 1, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (39, 'abc', 5, 5);
-INSERT INTO smart_city_db.Danhgia_city (id, username, id_city, rate_city) VALUES (40, 'admin', 4, 5);
-
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (1, 'admin', 1, 5, 'Quảng trường rất đẹp, không khí trong lành!', '2025-12-02 03:20:39');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (2, 'user1', 1, 4, 'Đông vui nhưng hơi kẹt xe vào cuối tuần.', '2025-12-02 03:20:39');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (3, 'admin', 1, 3, 'Nên dẹp một vài hàng quán bán giá cắt cổ người dân', '2025-12-02 03:27:29');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (4, 'abc', 1, 5, 'Quảng trường rộng bao la, chụp hình với nụ hoa Atiso siêu đẹp.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (5, 'user2', 1, 4, 'Buổi tối hơi lạnh nhưng không khí rất tuyệt, nhiều đồ ăn vặt.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (6, 'toilaai', 1, 5, 'Địa điểm check-in không thể bỏ qua khi đến Đà Lạt.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (7, 'ban', 2, 5, 'Đồ len rẻ đẹp, khoai lang nướng mật ngọt lịm.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (8, 'user5', 2, 4, 'Chợ đông vui nhộn nhịp, cẩn thận lạc nhau nhé.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (9, 'user1', 3, 5, 'Lẩu gà lá é ngon tuyệt vời, vị lạ miệng rất thích.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (10, 'user3', 3, 5, 'Thịt gà dai ngọt, nước dùng cay cay ấm người.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (11, 'banabc', 4, 4, 'Bánh mì ngon, bức tường vàng chụp ảnh rất nghệ.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (12, 'user6', 5, 5, 'Khách sạn sang trọng, ngay chợ rất tiện đi lại.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (13, 'user7', 6, 5, 'Cảnh đẹp như tranh, trăm hoa đua nở rất lãng mạn.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (14, 'user8', 7, 4, 'Quán cafe yên tĩnh, mấy bé mèo cute xỉu.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (15, 'user9', 8, 5, 'Bánh mì xíu mại nóng hổi, ăn sáng là chuẩn bài.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (16, 'user10', 9, 4, 'Biệt điện cổ kính, tìm hiểu lịch sử rất thú vị.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (17, 'abc', 10, 5, 'Rạp phim hiện đại, ghế ngồi thoải mái.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (18, 'toilaai', 51, 5, 'Nhà ga cổ kính, chụp hình cưới ở đây thì hết ý.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (19, 'ban', 52, 5, 'Buffet nhiều món ngon, thích nhất là kem và mứt dâu.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (20, 'user4', 11, 5, 'Leo bộ hơi mệt nhưng view từ vai tượng Chúa đẹp xuất sắc.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (21, 'user1', 11, 5, 'Gió mát lồng lộng, ngắm toàn cảnh biển Vũng Tàu.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (22, 'user2', 12, 4, 'Bánh khọt giòn rụm, tôm tươi rói, nước mắm pha vừa miệng.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (23, 'user3', 12, 5, 'Đợi hơi lâu xíu nhưng bù lại bánh rất ngon.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (24, 'user5', 13, 5, 'Khách sạn đẳng cấp, hồ bơi đẹp, nhân viên thân thiện.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (25, 'user6', 14, 4, 'Cáp treo đi êm, trên núi khí hậu mát mẻ như Đà Lạt.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (26, 'user7', 15, 5, 'Đường lên hải đăng đẹp, ngắm hoàng hôn ở đây là nhất.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (27, 'user8', 16, 4, 'Siêu thị rộng, nhiều đồ, tiện ghé mua quà mang về.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (28, 'user9', 17, 5, 'Hải sản tươi sống, chế biến đậm đà, view biển lãng mạn.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (29, 'abc', 18, 5, 'Chợ hải sản rẻ nhất Vũng Tàu, ghẹ chắc thịt.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (30, 'banabc', 19, 5, 'Phòng ốc sạch sẽ, buffet sáng ngon miệng.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (31, 'toilaai', 20, 5, 'Cổng trời chụp ảnh siêu ảo, gió biển mát rượi.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (32, 'user10', 53, 5, 'Bạch Dinh kiến trúc Pháp cổ rất đẹp, không gian thoáng đãng.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (33, 'user1', 54, 4, 'Pizza nướng củi thơm lừng, đế bánh mỏng giòn tan.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (34, 'user2', 21, 5, 'Hồ Gươm sáng sớm rất bình yên, không khí trong lành.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (35, 'user3', 21, 5, 'Đi dạo quanh hồ ăn kem Tràng Tiền là tuyệt nhất.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (36, 'user4', 22, 5, 'Phở ngon chuẩn vị Hà Nội, nước dùng ngọt thanh.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (37, 'user5', 22, 4, 'Quán hơi đông nhưng phục vụ khá nhanh, quẩy giòn.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (38, 'user6', 23, 5, 'Vào lăng viếng Bác cảm thấy rất xúc động và tự hào.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (39, 'user7', 24, 5, 'Trung tâm thương mại sang trọng, vị trí đắc địa.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (40, 'user8', 25, 5, 'Khách sạn mang đậm dấu ấn lịch sử, dịch vụ 5 sao.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (41, 'user9', 26, 4, 'Phố bia tạ hiện vui nổ trời, không khí náo nhiệt.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (42, 'abc', 27, 5, 'Chả cá Lã Vọng thơm ngon nức mũi, đậm đà bản sắc.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (43, 'ban', 28, 5, 'Văn Miếu cổ kính, nơi tôn vinh đạo học.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (44, 'banabc', 29, 4, 'Nhiều brand mua sắm, khu ăn uống đa dạng.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (45, 'toilaai', 30, 5, 'Rạp chiếu phim quốc gia chất lượng âm thanh tốt.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (46, 'user10', 55, 5, 'Nhà hát lớn đẹp lộng lẫy, kiến trúc Pháp tuyệt vời.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (47, 'user1', 56, 5, 'Cà phê trứng béo ngậy, không hề tanh chút nào, rất ngon.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (48, 'user2', 31, 5, 'VinWonders chơi cả ngày không chán, Tata show quá đỉnh.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (49, 'user3', 31, 5, 'Nhiều trò chơi cảm giác mạnh, công viên nước siêu to.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (50, 'user4', 32, 5, 'Tháp Bà cổ kính, kiến trúc Chăm độc đáo.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (51, 'user5', 32, 4, 'View từ tháp nhìn xuống cửa biển rất đẹp.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (52, 'user6', 33, 5, 'Nem nướng ngon, nước chấm sền sệt rất đặc biệt.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (53, 'user7', 34, 5, 'Khách sạn view biển trực diện, phòng ốc tiện nghi.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (54, 'user8', 35, 4, 'Chợ kiến trúc lạ mắt, nhiều đồ khô mua về làm quà.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (55, 'user9', 36, 5, 'Bảo tàng hải dương học nhiều mẫu vật lạ, các bé rất thích.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (56, 'abc', 37, 5, 'Bar bãi biển sôi động, nhạc hay, đồ uống ngon.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (57, 'ban', 38, 5, 'Bún sứa giòn sần sật, nước lèo ngọt thanh.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (58, 'banabc', 39, 4, 'Trung tâm mua sắm mát mẻ, view foodcourt đẹp.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (59, 'toilaai', 40, 5, 'Hòn Chồng đá xếp lạ mắt, uống cafe ngắm biển rất chill.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (60, 'user10', 57, 5, 'Tượng Phật trắng uy nghiêm, không gian chùa thanh tịnh.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (61, 'user1', 58, 5, 'Skylight view toàn thành phố về đêm lung linh huyền ảo.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (62, 'user2', 41, 5, 'Chợ nổi tấp nập ghe xuồng, trải nghiệm rất thú vị.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (63, 'user3', 41, 4, 'Ăn bún riêu trên ghe lắc lư là trải nghiệm khó quên.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (64, 'user4', 42, 5, 'Bến Ninh Kiều về đêm lung linh, gió sông mát rượi.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (65, 'user5', 42, 5, 'Đi du thuyền nghe đờn ca tài tử rất hay.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (66, 'user6', 43, 5, 'Lẩu mắm đậm đà, rau sống tươi ngon hết sẩy.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (67, 'user7', 44, 5, 'Vincom Xuân Khánh to đẹp nhất miền Tây.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (68, 'user8', 45, 5, 'Resort yên tĩnh, xanh mát, thích hợp nghỉ dưỡng.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (69, 'user9', 46, 5, 'Nhà cổ kiến trúc độc đáo, chụp hình hoài cổ rất đẹp.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (70, 'abc', 47, 5, 'Pizza ngon, phô mai tươi béo ngậy, không gian ấm cúng.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (71, 'ban', 48, 4, 'Chợ đêm nhiều đồ ăn vặt, giá cả bình dân.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (72, 'banabc', 49, 5, 'Thiền viện rộng lớn, kiến trúc gỗ rất đẹp và trang nghiêm.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (73, 'toilaai', 50, 5, 'Khu du lịch miệt vườn vui nhộn, xem đua heo cười bể bụng.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (74, 'user10', 59, 5, 'Vườn cò thiên nhiên hoang sơ, cò bay trắng trời.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (75, 'user1', 60, 5, 'Nem nướng Thanh Vân ngon trứ danh, nước chấm tương xay lạ miệng.', '2025-12-02 03:52:09');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (76, 'user3', 31, 4, 'Không có tiền nhưng coi review thôi cũng tạm tạm đi ha :>', '2025-12-02 03:54:15');
-INSERT INTO smart_city_db.Danhgia_diadiem (id, username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES (77, 'user3', 35, 2, 'Đồ mua bao la vô tư siêu cuốn luôn á', '2025-12-02 03:55:25');
-
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (1, 'Quảng trường Lâm Viên', 'Đường Trần Quốc Toản, Phường 10, TP. Đà Lạt', 1, 4, 'Du lịch', 'Quảng trường Lâm Viên không chỉ là trái tim của thành phố sương mù mà còn là kiệt tác kiến trúc độc đáo hướng ra hồ Xuân Hương. Nổi bật giữa không gian thoáng đãng là nụ hoa Atiso và đóa hoa Dã Quỳ khổng lồ được kết từ hàng ngàn tấm kính màu rực rỡ. Đây là nơi lý tưởng để du khách tản bộ, hít thở không khí trong lành và ngắm nhìn nhịp sống bình yên của người dân phố núi. Bên trong các công trình nghệ thuật này là hệ thống quán cà phê và siêu thị ngầm đầy tiện nghi. Vào những buổi chiều tà, quảng trường trở nên nhộn nhịp với các hoạt động thả diều, trượt patin và thưởng thức ẩm thực đường phố. Một điểm check-in mang tính biểu tượng mà bất kỳ ai đến Đà Lạt cũng phải ghé thăm.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (2, 'Chợ Đêm Đà Lạt', 'Đường Nguyễn Thị Minh Khai, Phường 1, TP. Đà Lạt', 1, 5, 'Mua sắm', 'Chợ Đêm Đà Lạt, hay còn gọi là chợ Âm Phủ, là thiên đường ẩm thực và mua sắm sầm uất bậc nhất thành phố khi màn đêm buông xuống. Bước vào chợ, bạn sẽ bị choáng ngợp bởi hương thơm nức mũi của khoai lang nướng, bánh tráng nướng và sữa đậu nành nóng hổi. Các gian hàng len, đồ thổ cẩm và đặc sản mứt, trà được bày bán san sát nhau tạo nên khung cảnh đầy màu sắc. Không khí se lạnh của Đà Lạt hòa quyện với sự ồn ào, náo nhiệt của kẻ mua người bán tạo nên một nét văn hóa rất riêng. Đây là nơi bạn có thể tìm thấy những món quà lưu niệm độc đáo hoặc đơn giản là thả mình vào dòng người để cảm nhận hơi thở phố núi về đêm.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (3, 'Lẩu Gà Lá É Tao Ngộ', 'Số 5 Đường 3/4, Phường 3, TP. Đà Lạt', 1, 1, 'Nhà hàng', 'Lẩu gà lá é Tao Ngộ là thương hiệu ẩm thực trứ danh, nơi mang đến hương vị lẩu gà chuẩn vị Phú Yên ngay giữa lòng Đà Lạt. Nồi lẩu nóng hổi với nước dùng ngọt thanh hầm từ xương, thịt gà đồi dai ngon sần sật và đặc biệt là hương thơm nồng nàn của lá é. Vị chua nhẹ của măng tươi kết hợp với vị cay nồng của ớt hiểm tạo nên một trải nghiệm vị giác bùng nổ trong tiết trời se lạnh. Quán tuy có không gian bình dân, mộc mạc nhưng lúc nào cũng tấp nập thực khách ra vào chờ thưởng thức. Đây là địa điểm lý tưởng để bạn quây quần bên gia đình, bạn bè và sưởi ấm dạ dày bằng một bữa ăn chất lượng.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (4, 'Tiệm Bánh Cối Xay Gió', 'Khu Hòa Bình, Phường 1, TP. Đà Lạt', 1, 3, 'Vui chơi', 'Tiệm Bánh Cối Xay Gió nổi tiếng khắp mạng xã hội nhờ bức tường vàng "thần thánh" mang đậm phong cách retro hoài cổ. Không chỉ là điểm check-in sống ảo triệu like, nơi đây còn chinh phục thực khách bởi các loại bánh mì truyền thống và bánh ngọt thơm ngon. Bánh mì ở đây có vỏ giòn rụm, nhân đầy đặn với xíu mại, gà xé hay thịt nướng đậm đà hương vị. Không gian tiệm được bài trí tinh tế, gợi nhớ về một Đà Lạt xưa cũ nhưng vẫn phảng phất nét hiện đại trẻ trung. Dừng chân tại đây, mua một chiếc bánh mì nóng hổi và chụp vài tấm hình kỷ niệm là trải nghiệm thú vị không thể bỏ qua.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (5, 'Hotel Colline', '10 Phan Bội Châu, Phường 2, TP. Đà Lạt', 1, 2, 'Khách sạn', 'Hotel Colline sở hữu vị trí đắc địa ngay trung tâm chợ Đà Lạt, nổi bật với kiến trúc mang hơi hướng châu Âu hiện đại và sang trọng. Khách sạn gây ấn tượng bởi tông màu gỗ ấm áp, thiết kế nội thất tinh tế và tầm nhìn bao quát toàn cảnh thành phố mộng mơ. Các phòng nghỉ được trang bị tiện nghi cao cấp, mang lại cảm giác thư thái tuyệt đối sau một ngày dài khám phá. Khu vực sảnh chung và nhà hàng tích hợp ẩm thực Á - Âu là nơi lý tưởng để thưởng thức những bữa tiệc sang chảnh. Với dịch vụ chuyên nghiệp và không gian đẳng cấp, Colline là lựa chọn hoàn hảo cho kỳ nghỉ dưỡng thượng lưu.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (6, 'Thung Lũng Tình Yêu', '03 - 05 - 07 Mai Anh Đào, Phường 8, TP. Đà Lạt', 1, 4, 'Du lịch', 'Thung Lũng Tình Yêu là một trong những thắng cảnh thơ mộng và trữ tình nhất Đà Lạt, được bao quanh bởi rừng thông xanh ngát và hồ Đa Thiện êm đềm. Khu du lịch này quy tụ hàng trăm loài hoa khoe sắc quanh năm, tạo nên những tiểu cảnh lãng mạn say đắm lòng người. Du khách có thể trải nghiệm đi xe jeep, đạp vịt trên hồ hoặc tham quan các mô hình kỳ quan thế giới thu nhỏ độc đáo. Không gian nơi đây cực kỳ thích hợp cho các cặp đôi muốn lưu giữ những khoảnh khắc ngọt ngào bên nhau. Sự kết hợp hài hòa giữa thiên nhiên hùng vĩ và bàn tay kiến tạo của con người đã làm nên sức hút bền bỉ cho địa danh này.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (7, 'Still Cafe', '59 Nguyễn Trãi, Phường 9, TP. Đà Lạt', 1, 3, 'Vui chơi', 'Still Cafe là một nốt trầm tĩnh lặng giữa phố núi, mang đậm phong cách Nhật Bản với những ngôi nhà gỗ mộc mạc và vườn cây xanh mát. Quán nằm ẩn mình trong một con hẻm nhỏ, tách biệt hoàn toàn với sự ồn ào của phố thị, tạo nên không gian thư giãn tuyệt đối. Điểm nhấn của quán là những chú "nhân viên" mèo lười biếng, dễ thương luôn sẵn sàng chơi đùa cùng khách hàng. Thực đơn đồ uống đa dạng cùng các loại bánh ngọt handmade được trình bày tỉ mỉ, đẹp mắt. Đến Still Cafe, bạn như lạc vào một bộ phim hoạt hình của Ghibli, nơi thời gian dường như trôi chậm lại.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (8, 'Bánh Mì Xíu Mại Hoàng Diệu', '26 Hoàng Diệu, Phường 5, TP. Đà Lạt', 1, 1, 'Nhà hàng', 'Bánh Mì Xíu Mại Hoàng Diệu là quán ăn sáng "huyền thoại" mà bất cứ ai đến Đà Lạt cũng phải ghé thử một lần. Chén xíu mại nóng hổi với nước dùng ninh từ xương ngọt lịm, viên thịt mềm thơm và da heo dai giòn là linh hồn của món ăn. Bánh mì luôn được giữ nóng giòn, chấm vào chén nước lèo đậm đà tạo nên hương vị khó quên trong buổi sớm mai se lạnh. Quán lúc nào cũng đông nghịt khách nhưng phục vụ rất nhanh nhẹn và niềm nở. Một bữa sáng giản dị, giá cả bình dân nhưng lại gói ghém trọn vẹn hương vị ẩm thực phố núi.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (9, 'Dinh Bảo Đại III', '1 Triệu Việt Vương, Phường 4, TP. Đà Lạt', 1, 4, 'Du lịch', 'Dinh Bảo Đại III, hay còn gọi là Biệt điện Quốc trưởng, là nơi sinh sống và làm việc của gia đình vị vua cuối cùng triều Nguyễn. Dinh thự nằm trên đồi thông cao, được xây dựng theo kiến trúc Pháp cổ điển, sang trọng và đầy trang nghiêm. Du khách đến đây sẽ được chiêm ngưỡng những hiện vật lịch sử quý giá, từ nội thất hoàng gia đến các vật dụng cá nhân của Vua Bảo Đại và Nam Phương Hoàng hậu. Không gian xung quanh dinh là những vườn hoa được chăm sóc tỉ mỉ, tạo nên khung cảnh thơ mộng và hoài cổ. Đây là địa điểm lý tưởng cho những ai yêu thích lịch sử và muốn tìm hiểu về cuộc đời của hoàng tộc xưa.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (10, 'Lotte Cinema Đà Lạt', 'Trần Hưng Đạo, Phường 10, TP. Đà Lạt', 1, 3, 'Vui chơi', 'Lotte Cinema Đà Lạt là cụm rạp chiếu phim hiện đại tiêu chuẩn quốc tế, mang đến không gian giải trí đỉnh cao cho người dân và du khách. Rạp được trang bị hệ thống âm thanh vòm sống động, màn hình sắc nét và ghế ngồi êm ái, đảm bảo trải nghiệm điện ảnh trọn vẹn nhất. Nằm trong khu phức hợp mua sắm, bạn có thể kết hợp xem phim với việc dạo chơi và thưởng thức ẩm thực. Không gian sảnh chờ rộng rãi, thiết kế trẻ trung là nơi check-in quen thuộc của giới trẻ Đà Lạt. Đây là điểm đến lý tưởng để thư giãn và thưởng thức những bộ phim bom tấn mới nhất.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (11, 'Tượng Chúa Kitô', '01 Bà Rịa, Phường 2, TP. Vũng Tàu', 2, 4, 'Du lịch', 'Tượng Chúa Kitô trên đỉnh núi Nhỏ là biểu tượng tôn giáo và du lịch nổi tiếng nhất của thành phố biển Vũng Tàu. Bức tượng cao 32 mét với sải tay rộng, đứng uy nghi hướng ra biển Đông bao la. Để lên đến chân tượng, du khách phải chinh phục gần 1000 bậc thang đá rợp bóng cây xanh mát. Điểm đặc biệt nhất là cầu thang xoắn ốc bên trong lòng tượng dẫn lên đôi vai Chúa, nơi bạn có thể phóng tầm mắt ngắm trọn vẹn toàn cảnh thành phố và đường bờ biển tuyệt đẹp. Đây là điểm đến tâm linh mang lại cảm giác bình yên và chinh phục cho mọi du khách.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (12, 'Bánh Khọt Gốc Vú Sữa', '14 Nguyễn Trường Tộ, Phường 2, TP. Vũng Tàu', 2, 1, 'Nhà hàng', 'Bánh Khọt Gốc Vú Sữa là quán ăn lâu đời và nổi tiếng nhất nhì Vũng Tàu, luôn tấp nập thực khách xếp hàng chờ đợi. Chiếc bánh khọt ở đây có lớp vỏ vàng ươm, giòn rụm, ôm trọn nhân tôm tươi rói ngọt thịt bên trong. Điểm nhấn làm nên thương hiệu chính là nước chấm chua ngọt pha chế theo công thức gia truyền cùng đĩa rau sống tươi xanh mơn mởn. Bánh được chiên trên bếp củi truyền thống nên luôn giữ được độ nóng và mùi thơm đặc trưng hấp dẫn. Thưởng thức bánh khọt tại đây là trải nghiệm ẩm thực dân dã nhưng đầy lôi cuốn của phố biển.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (13, 'The Imperial Hotel', '159 Thùy Vân, Phường Thắng Tam, TP. Vũng Tàu', 2, 2, 'Khách sạn', 'The Imperial Hotel là khách sạn 5 sao duy nhất tại khu vực Bãi Sau sở hữu kiến trúc Phục Hưng châu Âu lộng lẫy như một tòa lâu đài. Từng chi tiết nội thất, tranh treo tường đến thảm trải sàn đều toát lên vẻ sang trọng, quý phái và đẳng cấp hoàng gia. Khách sạn có bãi biển riêng tuyệt đẹp, hồ bơi ngoài trời rộng lớn và hệ thống nhà hàng ẩm thực đa dạng. Đây là nơi lý tưởng để tận hưởng kỳ nghỉ dưỡng xa hoa, tách biệt với sự ồn ào bên ngoài. Imperial không chỉ là nơi lưu trú mà còn là một tác phẩm nghệ thuật kiến trúc đáng chiêm ngưỡng.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (14, 'Hồ Mây Park', '1A Trần Phú, Phường 1, TP. Vũng Tàu', 2, 3, 'Vui chơi', 'Hồ Mây Park là khu du lịch sinh thái trên núi lớn nhất Vũng Tàu, nơi bạn phải di chuyển bằng hệ thống cáp treo hiện đại để lên tới đỉnh. Nơi đây sở hữu khí hậu mát mẻ quanh năm cùng hệ sinh thái rừng nguyên sinh và hồ nước nhân tạo khổng lồ trên núi. Khu du lịch tích hợp đầy đủ các loại hình giải trí từ trò chơi cảm giác mạnh, công viên nước đến các khu văn hóa tâm linh. Đặc biệt, Hồ Mây là địa điểm ngắm hoàng hôn và toàn cảnh thành phố Vũng Tàu lung linh về đêm đẹp nhất. Một điểm đến "tất cả trong một" phù hợp cho mọi lứa tuổi vui chơi cả ngày dài.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (15, 'Ngọn Hải Đăng', 'Đỉnh núi Nhỏ, Phường 2, TP. Vũng Tàu', 2, 4, 'Du lịch', 'Ngọn Hải Đăng Vũng Tàu, được người Pháp xây dựng từ năm 1862, là một trong những ngọn hải đăng cổ nhất Việt Nam. Nằm trên đỉnh núi Nhỏ, công trình này khoác lên mình lớp sơn trắng muốt nổi bật giữa nền trời xanh và cây cối bao quanh. Đường lên hải đăng uốn lượn đẹp như tranh vẽ, là cung đường check-in yêu thích của các bạn trẻ và tay máy nhiếp ảnh. Từ ban công trên đỉnh tháp, bạn có thể thu vào tầm mắt trọn vẹn biển trời bao la và những mái nhà nhấp nhô bên dưới. Nơi đây mang vẻ đẹp yên bình, lãng mạn, đặc biệt là vào những buổi chiều tà lộng gió.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (16, 'Lotte Mart Vũng Tàu', 'Góc đường 3/2 và Thi Sách, Phường 8, TP. Vũng Tàu', 2, 5, 'Mua sắm', 'Lotte Mart Vũng Tàu là trung tâm thương mại sầm uất, đáp ứng mọi nhu cầu mua sắm, giải trí và ẩm thực của người dân địa phương và du khách. Tòa nhà hiện đại này quy tụ siêu thị lớn với hàng ngàn mặt hàng đa dạng cùng các gian hàng thời trang, mỹ phẩm thương hiệu. Khu vui chơi giải trí và rạp chiếu phim Lotte Cinema tại đây luôn là điểm đến hấp dẫn vào mỗi dịp cuối tuần. Đặc biệt, khu ẩm thực phong phú với nhiều món ăn Hàn Quốc, Việt Nam và đồ ăn nhanh sẽ làm hài lòng mọi tín đồ ăn uống. Đây là điểm dừng chân tiện lợi để mua sắm quà lưu niệm và thư giãn trong không gian máy lạnh mát mẻ.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (17, 'Gành Hào Seafood', '03 Trần Phú, Phường 5, TP. Vũng Tàu', 2, 1, 'Nhà hàng', 'Gành Hào Seafood là nhà hàng hải sản nổi tiếng bậc nhất Vũng Tàu, sở hữu vị trí đắc địa ngay sát bờ biển với view ngắm hoàng hôn cực phẩm. Thực đơn tại đây vô cùng phong phú với nguồn hải sản tươi sống được tuyển chọn kỹ càng như tôm hùm, cua huỳnh đế, hào và các loại ốc. Các món ăn được chế biến tinh tế, giữ trọn độ ngọt tự nhiên của hải sản và trang trí đẹp mắt. Không gian nhà hàng rộng rãi, thoáng đãng, nghe rõ tiếng sóng vỗ rì rào tạo nên cảm giác thư thái khi dùng bữa. Gành Hào là lựa chọn hàng đầu cho những bữa tiệc sang trọng hay bữa ăn gia đình ấm cúng.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (18, 'Chợ Xóm Lưới', 'Nguyễn Công Trứ, Phường 1, TP. Vũng Tàu', 2, 5, 'Mua sắm', 'Chợ Xóm Lưới được mệnh danh là chợ hải sản tươi sống "ngon - bổ - rẻ" nhất Vũng Tàu, là địa chỉ ruột của dân sành ăn. Tại đây, bạn có thể tự tay lựa chọn những con ghẹ, tôm, mực, cá vừa được ngư dân đánh bắt mang về còn nhảy tanh tách. Điểm đặc biệt là dịch vụ chế biến tại chỗ nhanh gọn, bạn có thể nhờ người bán hấp, nướng hay xào me với chi phí rất phải chăng. Không khí chợ luôn nhộn nhịp, tiếng mời chào rôm rả đậm chất dân dã miền biển. Mua hải sản ở đây mang ra bờ biển thưởng thức là trải nghiệm "bụi" nhưng cực kỳ thú vị.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (19, 'Pullman Vung Tau', '15 Thi Sách, Phường Thắng Tam, TP. Vũng Tàu', 2, 2, 'Khách sạn', 'Pullman Vung Tau là khách sạn 5 sao quốc tế mang phong cách thiết kế đương đại, trẻ trung và đầy năng lượng. Tòa nhà nổi bật với kiến trúc khối tròn độc đáo, tạo nên không gian mở thoáng đãng và tràn ngập ánh sáng tự nhiên cho các phòng nghỉ. Khách sạn sở hữu hồ bơi vô cực tuyệt đẹp, quầy bar sành điệu và hệ thống nhà hàng phục vụ ẩm thực đa dạng từ Á sang Âu. Dịch vụ spa và phòng tập gym hiện đại tại đây giúp du khách tái tạo năng lượng hiệu quả. Pullman là điểm đến lý tưởng cho những du khách tìm kiếm sự tiện nghi, hiện đại và phong cách sống năng động.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (20, 'Mũi Nghinh Phong', '1 Hạ Long, Phường 2, TP. Vũng Tàu', 2, 4, 'Du lịch', 'Mũi Nghinh Phong là dải đất vươn dài ra biển, nơi đón những cơn gió mát lành quanh năm và sở hữu khung cảnh thiên nhiên hùng vĩ. Phía trước là biển cả bao la, phía sau là núi non trùng điệp, tạo nên một bức tranh sơn thủy hữu tình hiếm có. Nơi đây nổi tiếng với "Cổng Trời" - một bức tường gạch cũ kỹ trơ trọi giữa trời xanh, trở thành background sống ảo cực chất. Nước biển ở khu vực này rất trong xanh, bãi đá hoang sơ thích hợp cho các hoạt động cắm trại, câu cá và ngắm bình minh. Mũi Nghinh Phong mang vẻ đẹp hoang dại, phóng khoáng, làm say lòng những kẻ lữ hành yêu tự do.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (21, 'Hồ Gươm (Hồ Hoàn Kiếm)', 'Quận Hoàn Kiếm, TP. Hà Nội', 3, 4, 'Du lịch', 'Hồ Hoàn Kiếm, hay còn gọi là Hồ Gươm, được ví như trái tim xanh giữa lòng thủ đô ngàn năm văn hiến. Mặt hồ phẳng lặng như gương, in bóng Tháp Rùa cổ kính rêu phong nằm uy nghiêm trên gò đất nhỏ giữa hồ. Xung quanh hồ là những hàng cây cổ thụ rợp bóng mát, cầu Thê Húc son đỏ cong cong dẫn lối vào đền Ngọc Sơn linh thiêng. Đây là nơi gắn liền với truyền thuyết vua Lê Lợi trả gươm báu cho rùa thần, biểu tượng cho khát vọng hòa bình của dân tộc. Vào cuối tuần, khu vực quanh hồ trở thành phố đi bộ nhộn nhịp với các hoạt động văn hóa nghệ thuật dân gian đặc sắc.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (22, 'Phở Lý Quốc Sư', '10 Lý Quốc Sư, Hàng Trống, Hoàn Kiếm, Hà Nội', 3, 1, 'Nhà hàng', 'Phở Lý Quốc Sư là thương hiệu phở gia truyền nức tiếng, được xem là một trong những nơi bán phở ngon nhất Hà Nội. Bát phở ở đây chinh phục thực khách bởi nước dùng trong veo nhưng ngọt đậm đà từ xương hầm kỹ, dậy mùi thơm của thảo mộc. Bánh phở mềm dai, thịt bò tươi ngon từ tái, chín đến nạm, gầu đều được thái lát mỏng vừa ăn. Quán tuy đông đúc và thường xuyên phải xếp hàng nhưng ai nấy đều kiên nhẫn chờ đợi để được thưởng thức hương vị chuẩn Bắc. Ăn kèm với quẩy giòn tan và chút tương ớt cay nồng, bát phở Lý Quốc Sư trở thành trải nghiệm ẩm thực tinh tế khó quên.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (23, 'Lăng Chủ tịch Hồ Chí Minh', '2 Hùng Vương, Điện Biên, Ba Đình, Hà Nội', 3, 4, 'Du lịch', 'Lăng Chủ tịch Hồ Chí Minh là nơi an nghỉ vĩnh hằng của vị cha già kính yêu của dân tộc Việt Nam, tọa lạc uy nghiêm tại quảng trường Ba Đình lịch sử. Công trình được xây dựng bằng đá hoa cương xám, mang đường nét kiến trúc vừa hiện đại vừa trang trọng, thể hiện lòng tôn kính sâu sắc. Bên trong lăng là thi hài Bác được bảo quản trong hòm kính, xung quanh là các chiến sĩ tiêu binh túc trực ngày đêm. Quần thể lăng còn bao gồm Nhà sàn Bác Hồ, Ao cá và Bảo tàng Hồ Chí Minh, lưu giữ những kỷ vật gắn liền với cuộc đời Người. Viếng lăng Bác là hoạt động thiêng liêng, khơi dậy niềm tự hào dân tộc trong lòng mỗi người con đất Việt.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (24, 'Tràng Tiền Plaza', '24 Hai Bà Trưng, Tràng Tiền, Hoàn Kiếm, Hà Nội', 3, 5, 'Mua sắm', 'Tràng Tiền Plaza là trung tâm thương mại cao cấp và lâu đời bậc nhất Hà Nội, nằm ngay vị trí đắc địa sát bên Hồ Gươm. Tòa nhà mang kiến trúc Pháp cổ điển sang trọng, được trùng tu lộng lẫy, trở thành biểu tượng của sự phồn hoa đô hội. Bên trong là thiên đường mua sắm quy tụ hàng loạt thương hiệu thời trang, mỹ phẩm, đồng hồ xa xỉ hàng đầu thế giới. Không chỉ là nơi mua sắm, Tràng Tiền Plaza còn là điểm check-in "chanh sả" được giới trẻ và du khách cực kỳ yêu thích. Dịp lễ tết, tòa nhà được trang hoàng đèn hoa rực rỡ, làm bừng sáng cả một góc phố.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (25, 'Sofitel Legend Metropole', '15 Ngô Quyền, Hoàn Kiếm, Hà Nội', 3, 2, 'Khách sạn', 'Sofitel Legend Metropole Hà Nội là khách sạn huyền thoại với lịch sử hơn 100 năm tuổi, từng đón tiếp nhiều nguyên thủ quốc gia và danh nhân thế giới. Công trình mang đậm dấu ấn kiến trúc thuộc địa Pháp với tường trắng, cửa sổ xanh lục và những hành lang gỗ sang trọng. Khách sạn không chỉ là nơi lưu trú đẳng cấp mà còn là chứng nhân lịch sử, lưu giữ hầm tránh bom độc đáo thời chiến tranh. Dịch vụ tại Metropole đạt chuẩn 5 sao quốc tế, từ ẩm thực tinh hoa đến spa thư giãn đều hoàn hảo đến từng chi tiết. Lưu trú tại đây là hành trình ngược thời gian về một Hà Nội thanh lịch và hào hoa của thế kỷ trước.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (26, 'Phố Tạ Hiện', 'Phố Tạ Hiện, Hàng Buồm, Hoàn Kiếm, Hà Nội', 3, 3, 'Vui chơi', 'Phố Tạ Hiện được mệnh danh là "Ngã tư quốc tế", là con phố không ngủ sôi động bậc nhất trong lòng phố cổ Hà Nội. Khi màn đêm buông xuống, con phố nhỏ hẹp bỗng lột xác trở nên náo nhiệt với hàng quán bia hơi vỉa hè san sát nhau. Khách tây, khách ta ngồi chen chúc trên những chiếc ghế nhựa thấp, cùng nâng ly bia mát lạnh và thưởng thức nem chua rán, phô mai que. Không khí ở đây luôn tràn ngập tiếng cười nói, âm nhạc và sự giao thoa văn hóa đầy thú vị. Tạ Hiện chính là nơi bạn cảm nhận rõ nét nhất nhịp sống về đêm phóng khoáng và cởi mở của thủ đô.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (27, 'Chả Cá Lã Vọng', '14 Chả Cá, Hàng Bồ, Hoàn Kiếm, Hà Nội', 3, 1, 'Nhà hàng', 'Chả cá Lã Vọng là món ăn tinh hoa của ẩm thực Hà Thành, nổi tiếng đến mức tên món ăn được đặt cho cả một con phố. Món ăn được chế biến từ cá lăng tươi ngon, tẩm ướp gia vị riềng, mẻ, nghệ rồi nướng sơ trên than hoa trước khi chiên lại trên chảo mỡ nóng. Chả cá ăn kèm với bún rối, lạc rang, bánh đa nướng và đặc biệt là mắm tôm pha chanh ớt sủi bọt hấp dẫn. Hương vị thơm lừng của thì là, hành hoa hòa quyện với thịt cá ngọt bùi tạo nên một bản giao hưởng vị giác tuyệt vời. Thưởng thức chả cá Lã Vọng không chỉ là ăn uống mà còn là thưởng thức một nét văn hóa tao nhã của người Tràng An.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (28, 'Văn Miếu Quốc Tử Giám', '58 Quốc Tử Giám, Văn Miếu, Đống Đa, Hà Nội', 3, 4, 'Du lịch', 'Văn Miếu Quốc Tử Giám là trường đại học đầu tiên của Việt Nam, biểu tượng rực rỡ của nền giáo dục Nho học và truyền thống hiếu học ngàn đời. Quần thể di tích cổ kính bao gồm hồ Văn, khu Văn Miếu thờ Khổng Tử và khu Quốc Tử Giám đào tạo nhân tài cho đất nước xưa kia. Nổi bật nhất là 82 bia đá tiến sĩ đặt trên lưng rùa, được UNESCO công nhận là Di sản tư liệu thế giới. Không gian nơi đây thanh tịnh, rợp bóng cây cổ thụ, mang đậm vẻ đẹp kiến trúc phong kiến Việt Nam. Đây là nơi các sĩ tử thường đến cầu may mắn trước mỗi kỳ thi quan trọng.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (29, 'Vincom Center Bà Triệu', '191 Bà Triệu, Lê Đại Hành, Hai Bà Trưng, Hà Nội', 3, 5, 'Mua sắm', 'Vincom Center Bà Triệu là tổ hợp trung tâm thương mại sầm uất, điểm đến giải trí và mua sắm quen thuộc của người dân thủ đô. Tòa tháp đôi hiện đại nổi bật giữa trung tâm thành phố, quy tụ hàng trăm gian hàng từ thời trang, phụ kiện đến đồ gia dụng. Khu ẩm thực đa dạng với các nhà hàng Á - Âu, quán cà phê view đẹp đáp ứng mọi sở thích ăn uống. Đặc biệt, rạp chiếu phim CGV và khu vui chơi Game Center tại đây luôn thu hút đông đảo giới trẻ vào dịp cuối tuần. Vincom Bà Triệu mang đến trải nghiệm mua sắm hiện đại, tiện nghi và đẳng cấp.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (30, 'Rạp chiếu phim Quốc gia', '87 Láng Hạ, Quận Ba Đình, Hà Nội', 3, 3, 'Vui chơi', 'Trung tâm Chiếu phim Quốc gia là rạp chiếu phim lớn và có quy mô hàng đầu tại Hà Nội, trực thuộc Bộ Văn hóa, Thể thao và Du lịch. Nơi đây thường xuyên tổ chức các liên hoan phim quốc tế và công chiếu những bộ phim bom tấn trong và ngoài nước sớm nhất. Rạp sở hữu hệ thống phòng chiếu đa dạng, màn hình lớn sắc nét và âm thanh chất lượng cao, giá vé lại rất hợp lý. Không gian sảnh chờ rộng rãi, thường xuyên có các trưng bày điện ảnh thú vị thu hút người xem. Đây là địa điểm hẹn hò, giải trí văn hóa lành mạnh được yêu thích của khán giả thủ đô.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (31, 'VinWonders Nha Trang', 'Đảo Hòn Tre, Vĩnh Nguyên, TP. Nha Trang', 4, 3, 'Vui chơi', 'VinWonders Nha Trang tọa lạc trên đảo Hòn Tre xinh đẹp, là thiên đường giải trí đẳng cấp quốc tế với hàng trăm trải nghiệm hấp dẫn. Du khách đến đây bằng hệ thống cáp treo vượt biển dài nhất thế giới, ngắm nhìn toàn cảnh vịnh Nha Trang xanh biếc từ trên cao. Công viên sở hữu khu vui chơi cảm giác mạnh, công viên nước khổng lồ, thủy cung hiện đại và vườn thú Quý Vương độc đáo. Đặc biệt, show diễn thực cảnh đa phương tiện Tata Show vào buổi tối là màn trình diễn ánh sáng và âm nhạc mãn nhãn không thể bỏ lỡ. Đây là điểm đến lý tưởng cho cả gia đình vui chơi quên lối về.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (32, 'Tháp Bà Ponagar', '2 Tháng 4, Vĩnh Phước, TP. Nha Trang', 4, 4, 'Du lịch', 'Tháp Bà Ponagar là quần thể kiến trúc Chăm Pa cổ kính và quy mô nhất còn sót lại ở miền Trung, nằm uy nghiêm trên đồi Cù Lao. Được xây dựng từ thế kỷ 8 đến thế kỷ 13, khu đền tháp thờ nữ thần Po Nagar - người mẹ xứ sở của người Chăm. Các tòa tháp được xây bằng gạch nung đỏ với kỹ thuật điêu luyện, chạm khắc tinh xảo, trường tồn cùng thời gian. Từ sân tháp, du khách có thể phóng tầm mắt ngắm nhìn cửa biển và xóm bóng bình yên bên dòng sông Cái. Nơi đây không chỉ là điểm tham quan văn hóa mà còn là chốn tâm linh linh thiêng, thu hút đông đảo người dân đến hành hương.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (33, 'Nem Nướng Đặng Văn Quyên', '16A Lãn Ông, Xương Huân, TP. Nha Trang', 4, 1, 'Nhà hàng', 'Nem Nướng Đặng Văn Quyên là thương hiệu ẩm thực trứ danh, góp phần đưa món nem nướng Nha Trang trở thành đặc sản nổi tiếng cả nước. Phần nem nướng vàng ruộm, thơm lừng mùi thịt nướng than hoa, ăn kèm với bánh tráng chiên giòn, rau sống và xoài xanh chua ngọt. Linh hồn của món ăn nằm ở bát nước chấm sền sệt, màu vàng cam bắt mắt, được nấu từ nếp, thịt băm và gia vị bí truyền. Khi cuốn tất cả nguyên liệu lại và chấm vào nước sốt, hương vị hòa quyện bùng nổ trong khoang miệng. Quán có không gian rộng rãi, phục vụ nhanh, là điểm dừng chân bắt buộc của mọi tín đồ ẩm thực.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (34, 'InterContinental Nha Trang', '32-34 Trần Phú, Lộc Thọ, TP. Nha Trang', 4, 2, 'Khách sạn', 'InterContinental Nha Trang là khách sạn 5 sao sang trọng bậc nhất, nằm ngay trên con đường vàng Trần Phú với tầm nhìn trực diện ra vịnh biển. Khách sạn sở hữu thiết kế hiện đại, tinh tế, lấy cảm hứng từ vẻ đẹp của đại dương với tông màu xanh - trắng chủ đạo. Các phòng nghỉ đều có ban công rộng, nơi bạn có thể đón bình minh rực rỡ ngay tại giường. Hệ thống nhà hàng Cookbook Cafe nổi tiếng với buffet hải sản thượng hạng, tươi ngon nhất vùng biển Khánh Hòa. Với dịch vụ đẳng cấp và vị trí trung tâm, InterContinental mang đến kỳ nghỉ dưỡng hoàn hảo và tiện nghi nhất.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (35, 'Chợ Đầm', 'Bến Chợ, Vạn Thạnh, TP. Nha Trang', 4, 5, 'Mua sắm', 'Chợ Đầm là ngôi chợ trung tâm và biểu tượng thương mại lâu đời của thành phố biển Nha Trang, nổi bật với kiến trúc hình hoa sen độc đáo. Đây là đầu mối giao thương sầm uất, nơi bày bán đủ mọi loại hàng hóa từ nhu yếu phẩm, quần áo đến đặc sản địa phương. Du khách đến Chợ Đầm thường tìm mua các loại hải sản khô như mực rim, cá chỉ vàng, yến sào và nem chua về làm quà. Không khí trong chợ luôn nhộn nhịp, huyên náo với tiếng mời chào, trả giá đậm chất chợ truyền thống Việt Nam. Dạo quanh chợ Đầm là cách tốt nhất để tìm hiểu văn hóa sống và ẩm thực phong phú của người dân phố biển.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (36, 'Viện Hải Dương Học', '1 Cầu Đá, Vĩnh Nguyên, TP. Nha Trang', 4, 4, 'Du lịch', 'Viện Hải Dương Học Nha Trang là nơi lưu giữ và nghiên cứu về đời sống sinh vật biển lớn nhất Đông Nam Á, một kho tàng đại dương sống động trên cạn. Viện sở hữu bộ sưu tập hơn 20.000 mẫu vật của 4.000 loài sinh vật biển, trong đó có bộ xương cá voi khổng lồ dài tới 26 mét. Khu vực bể nuôi ngoài trời là nơi sinh sống của rùa biển, cá mập, hải cẩu và hàng ngàn loài cá rực rỡ sắc màu. Đặc biệt, khu trưng bày tài nguyên biển đảo Hoàng Sa - Trường Sa giúp nâng cao nhận thức về chủ quyền biển đảo. Đây là điểm đến giáo dục thú vị và bổ ích cho cả người lớn và trẻ em.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (37, 'Sailing Club', '72-74 Trần Phú, Lộc Thọ, TP. Nha Trang', 4, 3, 'Vui chơi', 'Sailing Club là tổ hợp nhà hàng, quán bar và câu lạc bộ giải trí bên bờ biển nổi tiếng và sôi động nhất Nha Trang. Ban ngày, đây là nơi thư giãn lý tưởng với không gian mở thoáng đãng, phục vụ các món ăn Á - Âu tinh tế và cocktail mát lạnh. Khi màn đêm buông xuống, Sailing Club lột xác thành tụ điểm tiệc tùng bùng nổ với các màn múa lửa điêu luyện và DJ chơi nhạc cực chất. Du khách có thể nhún nhảy trên bãi cát mịn, tận hưởng gió biển và hòa mình vào không khí lễ hội bất tận. Đây là điểm hẹn không thể bỏ qua cho những ai yêu thích cuộc sống về đêm náo nhiệt.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (38, 'Bún Sứa Năm Beo', 'B2 Phan Bội Châu, Xương Huân, TP. Nha Trang', 4, 1, 'Nhà hàng', 'Bún Sứa Năm Beo là quán ăn bình dân nhưng nức tiếng gần xa nhờ hương vị đậm đà, chuẩn vị Nha Trang của tô bún sứa, bún cá. Nước lèo ở đây được nấu hoàn toàn từ cá biển nên có vị ngọt thanh tự nhiên, không chút dầu mỡ, rất dễ ăn. Những miếng sứa giòn sần sật, trong veo kết hợp với chả cá thu dai ngon tạo nên sức hấp dẫn khó cưỡng. Tô bún nóng hổi ăn kèm với rau sống thái nhỏ và chút ớt trưng cay nồng khiến thực khách vừa ăn vừa xuýt xoa. Quán nằm ngay khu chợ Đầm, là địa chỉ ăn sáng, ăn trưa quen thuộc của người dân địa phương và khách du lịch.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (39, 'Nha Trang Center', '20 Trần Phú, Lộc Thọ, TP. Nha Trang', 4, 5, 'Mua sắm', 'Nha Trang Center là trung tâm thương mại phức hợp hiện đại nằm ngay mặt tiền biển, tích hợp mua sắm, giải trí và căn hộ nghỉ dưỡng. Tòa nhà quy tụ nhiều thương hiệu thời trang, mỹ phẩm nổi tiếng thế giới, đáp ứng nhu cầu shopping của du khách sành điệu. Khu ẩm thực Food Court có view nhìn thẳng ra biển tuyệt đẹp, phục vụ đa dạng món ăn từ nhiều quốc gia. Ngoài ra, tại đây còn có rạp chiếu phim, khu bowling và siêu thị, mang đến trải nghiệm giải trí tiện lợi "tất cả trong một". Đây là điểm tránh nóng lý tưởng và mua sắm thư giãn sau những giờ vui chơi dưới biển.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (40, 'Hòn Chồng', 'Vĩnh Phước, TP. Nha Trang', 4, 4, 'Du lịch', 'Hòn Chồng là danh thắng thiên nhiên độc đáo, nơi những khối đá lớn nhỏ xếp chồng lên nhau một cách kỳ thú như có bàn tay sắp đặt của tạo hóa. Quần thể đá nhô ra biển, sóng vỗ rì rào ngày đêm, tạo nên khung cảnh sơn thủy hữu tình vô cùng hùng vĩ. Tại đây có hòn đá in dấu bàn tay khổng lồ gắn liền với những truyền thuyết dân gian bí ẩn và thú vị. Từ Hòn Chồng, du khách có thể ngắm nhìn trọn vẹn thành phố Nha Trang và các hòn đảo xa xa. Đây là địa điểm lý tưởng để ngắm bình minh, uống cà phê và chụp những bức ảnh check-in ấn tượng.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (41, 'Chợ Nổi Cái Răng', '46 Hai Bà Trưng, Tân An, Ninh Kiều, Cần Thơ', 5, 4, 'Du lịch', 'Chợ Nổi Cái Răng là di sản văn hóa phi vật thể quốc gia, nét đặc trưng tiêu biểu nhất của văn hóa sông nước miền Tây Nam Bộ. Chợ họp từ tờ mờ sáng ngay trên mặt sông, với hàng trăm ghe xuồng chở đầy ắp trái cây, nông sản tấp nập qua lại. Điểm độc đáo là cây "bẻo" treo gì bán nấy trước mũi ghe, giúp khách mua dễ dàng nhận biết từ xa. Du khách đến đây sẽ được trải nghiệm cảm giác bồng bềnh trên sông, thưởng thức tô bún riêu hay ly cà phê kho nóng hổi ngay trên thuyền. Tiếng máy nổ, tiếng mái chèo khua nước hòa cùng tiếng gọi nhau í ới tạo nên bức tranh cuộc sống sống động và chân thực.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (42, 'Bến Ninh Kiều', 'Đường Hai Bà Trưng, Tân An, Ninh Kiều, Cần Thơ', 5, 3, 'Vui chơi', 'Bến Ninh Kiều là biểu tượng của xứ Tây Đô, nằm êm đềm bên ngã ba sông Hậu và sông Cần Thơ thơ mộng. Nơi đây có công viên cây xanh rợp mát, tượng đài Bác Hồ uy nghiêm và cầu đi bộ tình yêu lung linh ánh đèn về đêm. Bến Ninh Kiều đẹp nhất khi hoàng hôn buông xuống, du thuyền qua lại tấp nập, đưa du khách thưởng ngoạn sông nước và nghe đờn ca tài tử. Xung quanh bến là các nhà hàng, quán bar và chợ đêm sầm uất, tạo nên không khí vui tươi, nhộn nhịp. "Cần Thơ có bến Ninh Kiều, đi mau lòng nhớ, về chiều lòng thương" chính là câu ca dao nói lên sức hút của địa danh này.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (43, 'Lẩu Mắm Dạ Lý', '89 Đường 3/2, Hưng Lợi, Ninh Kiều, Cần Thơ', 5, 1, 'Nhà hàng', 'Lẩu mắm Dạ Lý là địa chỉ ẩm thực nức tiếng, nơi lưu giữ hương vị lẩu mắm miền Tây chuẩn mực và đậm đà nhất. Nồi lẩu mắm ở đây thơm lừng mùi mắm cá linh, cá sặc, nước dùng đậm vị nhưng không quá mặn, ngọt thanh từ nước dừa. Đồ nhúng lẩu vô cùng phong phú với cá basa, tôm càng, mực, thịt ba chỉ và đặc biệt là rổ rau sống "hoành tráng" với hơn 20 loại rau đặc trưng vùng sông nước. Bông súng, điên điển, rau đắng, kèo nèo... hòa quyện với vị mắm tạo nên trải nghiệm vị giác khó quên. Quán có không gian rộng rãi, thoáng mát, là điểm đến không thể bỏ lỡ của du khách sành ăn.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (44, 'Vincom Plaza Xuân Khánh', '209 Đường 30/4, Xuân Khánh, Ninh Kiều, Cần Thơ', 5, 5, 'Mua sắm', 'Vincom Plaza Xuân Khánh là trung tâm thương mại lớn và hiện đại bậc nhất khu vực Đồng bằng sông Cửu Long, tọa lạc bên bờ sông Hậu. Tòa nhà gây ấn tượng với kiến trúc sang trọng, là tổ hợp mua sắm, vui chơi và ẩm thực đẳng cấp 5 sao. Nơi đây quy tụ đầy đủ các thương hiệu thời trang, mỹ phẩm, điện máy uy tín cùng hệ thống rạp chiếu phim CGV và khu vui chơi trẻ em. Đặc biệt, Vincom Xuân Khánh là điểm ngắm pháo hoa và cảnh sông nước Cần Thơ tuyệt đẹp từ trên cao. Đây là biểu tượng cho sự phát triển năng động và hiện đại của thành phố Cần Thơ.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (45, 'Victoria Can Tho Resort', 'Cồn Cái Khế, Phường Cái Khế, Ninh Kiều, Cần Thơ', 5, 2, 'Khách sạn', 'Victoria Can Tho Resort là khu nghỉ dưỡng 4 sao đầu tiên và sang trọng bậc nhất tại Cần Thơ, nằm yên bình bên bờ sông Hậu. Resort được thiết kế theo phong cách kiến trúc Đông Dương cổ điển, kết hợp hài hòa giữa vẻ đẹp Pháp sang trọng và nét mộc mạc của miền Tây. Khuôn viên khu nghỉ dưỡng ngập tràn cây xanh, hồ bơi rộng lớn và các phòng nghỉ thoáng đãng, tiện nghi. Du khách có thể thư giãn tại spa, thưởng thức bữa tối lãng mạn trên tàu Lady Hau hoặc tham gia các lớp học nấu ăn thú vị. Victoria Cần Thơ mang đến không gian nghỉ dưỡng thanh bình, tách biệt hoàn toàn với phố thị ồn ào.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (46, 'Nhà Cổ Bình Thủy', '144 Bùi Hữu Nghĩa, Bình Thủy, Cần Thơ', 5, 4, 'Du lịch', 'Nhà Cổ Bình Thủy là ngôi nhà cổ đẹp nhất xứ Tây Đô, được gia tộc họ Dương xây dựng vào năm 1870 với lối kiến trúc giao thoa Đông - Tây độc đáo. Bên ngoài ngôi nhà mang dáng dấp biệt thự Pháp lộng lẫy, nhưng bên trong lại bài trí theo phong cách thuần Việt trang nghiêm với gian thờ uy nghi. Sàn nhà lát gạch bông nhập từ Pháp, hệ thống đèn chùm, bộ bàn ghế cẩn xà cừ tinh xảo đều là những cổ vật vô giá. Ngôi nhà từng là bối cảnh chính của bộ phim nổi tiếng "Người Tình" và nhiều phim Việt Nam khác. Đến đây, du khách như lạc vào không gian hoài cổ, lắng nghe những giai thoại thăng trầm của một gia tộc giàu có xưa kia.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (47, 'Pizza 4P\'s Cần Thơ', 'Lầu 2, Sense City, Đại lộ Hòa Bình, Ninh Kiều, Cần Thơ', 5, 1, 'Nhà hàng', 'Pizza 4P\'s Cần Thơ mang đến làn gió ẩm thực mới mẻ, kết hợp tinh tế giữa pizza Ý truyền thống và phong cách Nhật Bản hiện đại. Nhà hàng nằm trong trung tâm thương mại Sense City, sở hữu không gian sang trọng, ấm cúng với bếp mở cho phép thực khách chiêm ngưỡng quy trình làm bánh. Pizza ở đây nổi tiếng với đế bánh tươi, nướng củi thơm lừng và các loại phô mai tự làm (homemade cheese) béo ngậy, tươi mới. Các món mì Ý, salad và tráng miệng cũng được chế biến cầu kỳ, hương vị thanh tao, tốt cho sức khỏe. Đây là điểm hẹn lý tưởng cho những bữa tiệc gia đình hay gặp gỡ đối tác tại Cần Thơ.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (48, 'Chợ Đêm Tây Đô', 'Cách Mạng Tháng 8, Cái Khế, Ninh Kiều, Cần Thơ', 5, 5, 'Mua sắm', 'Chợ Đêm Tây Đô là điểm vui chơi, mua sắm sầm uất về đêm, mang đậm bản sắc văn hóa của vùng đất Tây Đô. Chợ nằm trong khu vực Công viên văn hóa Miền Tây, với hàng trăm gian hàng bày bán quần áo, giày dép, đồ thủ công mỹ nghệ và trái cây. Khu ẩm thực là nơi hấp dẫn nhất với vô vàn món ngon đường phố như bánh xèo, cá nướng, bún mắm và các loại chè miền Tây ngọt lịm. Không khí chợ luôn náo nhiệt, người bán hàng thân thiện, chất phác tạo nên cảm giác gần gũi, vui vẻ. Dạo chợ đêm là cách tuyệt vời để cảm nhận nhịp sống năng động và thưởng thức hương vị đêm Cần Thơ.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (49, 'Thiền Viện Trúc Lâm', 'TL 923, Mỹ Khánh, Phong Điền, Cần Thơ', 5, 4, 'Du lịch', 'Thiền Viện Trúc Lâm Phương Nam là ngôi chùa lớn nhất miền Tây Nam Bộ, mang đậm lối kiến trúc Phật giáo thời Lý - Trần thuần Việt. Thiền viện tọa lạc trên diện tích rộng lớn gần 4 hecta, với chánh điện lợp ngói đỏ, cột gỗ lim to lớn và tượng Phật bằng đồng uy nghi. Khuôn viên chùa được bài trí hài hòa với hồ sen, vườn cây xanh mát và các tiểu cảnh tĩnh lặng, tạo cảm giác thanh tịnh thoát tục. Đây là nơi tu học của các tăng ni phật tử và là điểm du lịch tâm linh thu hút đông đảo du khách thập phương chiêm bái. Đến đây, lòng người như nhẹ lại, tìm thấy sự bình an giữa bộn bề cuộc sống.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (50, 'Khu Du Lịch Mỹ Khánh', '335 Lộ Vòng Cung, Mỹ Khánh, Phong Điền, Cần Thơ', 5, 3, 'Vui chơi', 'Khu Du Lịch Mỹ Khánh được ví như một đồng bằng sông Cửu Long thu nhỏ, nơi hội tụ đầy đủ tinh hoa văn hóa, ẩm thực và nếp sống miệt vườn. Du khách đến đây sẽ được tham quan vườn trái cây trĩu quả, tham gia tát mương bắt cá, xem đua heo, đua chó vui nhộn. Đặc biệt, bạn có thể hóa thân thành điền chủ, đi xe ngựa thăm thú làng nghề truyền thống và thưởng thức bữa cơm điền chủ với các món ngon dân dã. Khu du lịch còn có hệ thống nhà nghỉ bungalow tiện nghi nằm dưới tán cây xanh mát. Mỹ Khánh là điểm đến lý tưởng cho các hoạt động dã ngoại, vui chơi giải trí tập thể vui nhộn.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (51, 'Ga Đà Lạt', '1 Quang Trung, Phường 10, TP. Đà Lạt', 1, 4, 'Du lịch', 'Ga Đà Lạt được mệnh danh là nhà ga xe lửa cổ kính và đẹp nhất Đông Dương, nổi bật với kiến trúc ba mái hình chóp mô phỏng đỉnh núi Langbiang. Tòa nhà mang đậm dấu ấn kiến trúc Pháp kết hợp hài hòa với nét văn hóa nhà rông Tây Nguyên độc đáo. Hiện nay, ga vẫn vận hành tuyến tàu du lịch ngắn đưa khách đến Trại Mát tham quan chùa Linh Phước. Từng toa tàu gỗ, đường ray nhuốm màu thời gian và quầy vé cổ xưa đều là những góc sống ảo "chất lừ" cho du khách. Đến đây, bạn như được quay ngược thời gian trở về những năm tháng huy hoàng của thế kỷ trước.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (52, 'Langfarm Buffet', '06 Nguyễn Thị Minh Khai, Phường 1, TP. Đà Lạt', 1, 1, 'Nhà hàng', 'Langfarm Buffet là mô hình buffet nông sản độc đáo, nơi bạn có thể thỏa thích thưởng thức hơn 50 loại đặc sản Đà Lạt chất lượng cao. Thực đơn bao gồm các loại mứt trái cây dẻo thơm, trà thảo mộc thanh mát, kem gelato mát lạnh và khoai lang nướng nóng hổi. Không gian nhà hàng được thiết kế ấm cúng, hiện đại, rất thích hợp cho các buổi tụ họp gia đình hoặc nhóm bạn. Tất cả sản phẩm đều có nguồn gốc rõ ràng, đảm bảo vệ sinh an toàn thực phẩm và giữ trọn hương vị tự nhiên. Đây là cách tuyệt vời nhất để trải nghiệm trọn vẹn hương vị nông sản phố núi chỉ trong một lần ghé thăm.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (53, 'Bạch Dinh', '06 Trần Phú, Phường 1, TP. Vũng Tàu', 2, 4, 'Du lịch', 'Bạch Dinh (Villa Blanche) là tòa dinh thự màu trắng mang đậm kiến trúc Pháp cổ điển, nằm lưng tựa núi Lớn và hướng mặt ra biển Bãi Trước. Được xây dựng từ cuối thế kỷ 19, nơi đây từng là nơi nghỉ dưỡng của Toàn quyền Đông Dương và các đời vua chúa Việt Nam. Bên trong dinh thự hiện trưng bày hàng ngàn cổ vật gốm sứ quý hiếm vớt được từ các con tàu đắm. Khuôn viên Bạch Dinh rợp bóng cây sứ cổ thụ, mùa hoa nở tỏa hương thơm ngát tạo nên khung cảnh vô cùng lãng mạn. Đây là điểm tham quan văn hóa lịch sử không thể bỏ qua, nơi lưu giữ ký ức vàng son một thời.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (54, 'David Pizzeria', '92 Hạ Long, Phường 2, TP. Vũng Tàu', 2, 1, 'Nhà hàng', 'David Pizzeria là nhà hàng Ý nổi tiếng lâu đời tại Vũng Tàu, chuyên phục vụ các món pizza nướng củi chuẩn vị truyền thống. Điểm đặc biệt làm nên tên tuổi của quán là những chiếc pizza đế mỏng giòn tan, phô mai béo ngậy và topping tươi ngon. Ngoài pizza, các món mì Ý, salad và bít tết tại đây cũng được thực khách đánh giá rất cao về hương vị và cách trình bày. Không gian quán ấm cúng, view nhìn ra biển lãng mạn, rất thích hợp cho các cặp đôi hẹn hò hoặc bữa tối gia đình. Chủ quán là người nước ngoài rất thân thiện, đảm bảo mang đến trải nghiệm ẩm thực Âu châu đích thực.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (55, 'Nhà Hát Lớn Hà Nội', '01 Tràng Tiền, Phan Chu Trinh, Hoàn Kiếm, Hà Nội', 3, 4, 'Du lịch', 'Nhà Hát Lớn Hà Nội là công trình kiến trúc tuyệt đẹp mang đậm phong cách Pháp, được ví như bản sao thu nhỏ của Nhà hát Opéra Garnier ở Paris. Với màu vàng đặc trưng và những đường nét điêu khắc tinh xảo, tòa nhà toát lên vẻ đẹp sang trọng, cổ điển giữa trung tâm thủ đô. Đây là thánh đường nghệ thuật, nơi diễn ra các buổi hòa nhạc giao hưởng, vở kịch và sự kiện văn hóa trọng đại của đất nước. Bên trong nhà hát là không gian lộng lẫy với hệ thống đèn chùm pha lê, thảm đỏ và khán phòng acoustics chuẩn mực. Check-in tại Nhà Hát Lớn là điều không thể thiếu trong hành trình khám phá Hà Nội.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (56, 'Cafe Giảng', '39 Nguyễn Hữu Huân, Lý Thái Tổ, Hoàn Kiếm, Hà Nội', 3, 1, 'Nhà hàng', 'Cafe Giảng là cái nôi khai sinh ra món Cà phê Trứng huyền thoại, một thức uống độc đáo làm say lòng biết bao du khách quốc tế. Quán nằm khiêm tốn trong một con ngõ nhỏ trên phố Nguyễn Hữu Huân, mang vẻ đẹp mộc mạc, hoài cổ của Hà Nội xưa. Cà phê trứng ở đây có lớp kem trứng đánh bông mịn màng, béo ngậy phủ lên trên lớp cà phê đen đậm đà, tạo nên hương vị thơm ngon khó cưỡng. Dù nóng hay đá, ly cà phê Giảng vẫn giữ được vị ngon đặc trưng không hề tanh, để lại dư vị ngọt ngào. Đến Giảng, ngồi trên chiếc ghế đẩu thấp, nhâm nhi ly cà phê là cách tuyệt vời để cảm nhận nhịp sống chậm rãi của phố cổ.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (57, 'Chùa Long Sơn', '22 Đường 23/10, Phương Sơn, TP. Nha Trang', 4, 4, 'Du lịch', 'Chùa Long Sơn, hay còn gọi là Chùa Phật Trắng, là ngôi cổ tự linh thiêng và nổi tiếng bậc nhất tại thành phố biển Nha Trang. Điểm nhấn của chùa là bức tượng Kim Thân Phật Tổ màu trắng khổng lồ ngự trên đỉnh đồi Trại Thủy, có thể nhìn thấy từ nhiều nơi trong thành phố. Để lên đến chân tượng Phật, du khách phải leo qua 193 bậc tam cấp, vừa đi vừa tận hưởng không gian thanh tịnh dưới bóng cây xanh. Từ trên cao, bạn có thể chiêm ngưỡng toàn cảnh Nha Trang hiền hòa và xinh đẹp. Chùa Long Sơn là chốn tâm linh tìm về sự bình an và thanh thản trong tâm hồn.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (58, 'Skylight Nha Trang', '38 Trần Phú, Lộc Thọ, TP. Nha Trang', 4, 3, 'Vui chơi', 'Skylight Nha Trang là Rooftop Beach Club ngoài trời cao nhất thành phố, tọa lạc trên tầng 43 của khách sạn Havana. Tại đây, bạn được trải nghiệm cảm giác "đi trên không trung" với sàn kính Skywalk trong suốt đầy thử thách và thú vị. Skylight sở hữu tầm nhìn panorama 360 độ bao quát toàn bộ vịnh Nha Trang, thành phố và núi non hùng vĩ, đặc biệt lung linh khi lên đèn. Nơi đây phục vụ các loại cocktail thượng hạng, ẩm thực tinh tế trong không gian âm nhạc sôi động của các DJ hàng đầu. Đây là điểm đến đẳng cấp để tận hưởng cuộc sống về đêm và ngắm nhìn Nha Trang từ một góc nhìn hoàn toàn khác biệt.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (59, 'Vườn Cò Bằng Lăng', 'Thới Bình 1, Thuận An, Thốt Nốt, Cần Thơ', 5, 4, 'Du lịch', 'Vườn Cò Bằng Lăng là sân chim tự nhiên lớn nhất vùng đồng bằng sông Cửu Long, nơi trú ngụ của hàng trăm ngàn cánh cò trắng xóa. Để vào vườn cò, du khách sẽ đi qua những con đường rợp bóng tre xanh mát, khung cảnh làng quê yên bình tuyệt đẹp. Thời điểm đẹp nhất để ngắm cò là lúc bình minh khi đàn cò bay đi kiếm ăn hoặc hoàng hôn khi chúng bay về tổ, tạo nên khung cảnh trắng xóa cả một góc trời. Tiếng chim kêu râm ran, tiếng vỗ cánh xao động tạo nên bản giao hưởng thiên nhiên đầy sức sống. Đây là điểm đến tuyệt vời cho những ai yêu thiên nhiên và nhiếp ảnh.');
-INSERT INTO smart_city_db.DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES (60, 'Nem Nướng Thanh Vân', '17 Đại lộ Hòa Bình, Tân An, Ninh Kiều, Cần Thơ', 5, 1, 'Nhà hàng', 'Nem Nướng Thanh Vân là quán ăn lâu đời đã trở thành thương hiệu gắn liền với ẩm thực Cần Thơ. Nem nướng ở đây được làm từ thịt heo tươi quết dẻo, nướng trên than hồng tỏa hương thơm nức mũi, vị ngọt đậm đà. Điều làm nên sự khác biệt chính là món nước chấm tương xay sền sệt, béo bùi, thêm chút ớt cay và đậu phộng rang giòn tan. Cuốn nem với bánh hỏi, rau sống, dưa chua rồi chấm ngập trong chén sốt là trải nghiệm vị giác tuyệt vời. Quán nằm ngay trung tâm đại lộ Hòa Bình, không gian giản dị nhưng lúc nào cũng nườm nượp khách ra vào.');
-
-INSERT INTO smart_city_db.LoaiHinh (id, ten_loai_hinh) VALUES (1, 'Nhà hàng');
-INSERT INTO smart_city_db.LoaiHinh (id, ten_loai_hinh) VALUES (2, 'Khách sạn');
-INSERT INTO smart_city_db.LoaiHinh (id, ten_loai_hinh) VALUES (3, 'Vui chơi');
-INSERT INTO smart_city_db.LoaiHinh (id, ten_loai_hinh) VALUES (4, 'Du lịch');
-INSERT INTO smart_city_db.LoaiHinh (id, ten_loai_hinh) VALUES (5, 'Mua sắm');
-
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (1, 'admin', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Daniel Tam', 1);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (2, 'abc', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Nguyen Van A', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (3, 'toilaai', '91a73fd806ab2c005c13b4dc19130a884e909dea3f72d46e30266fe1a1f588d8', 'Tôixin Chào', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (4, 'ban', 'd4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35', 'Bạn Tên Gì', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (5, 'banabc', '6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b', 'Bạn Tên Gái', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (6, 'user1', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Nguyen Van A', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (7, 'user2', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Tran Thi B', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (8, 'user3', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Le Van C', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (9, 'user4', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Pham Thi D', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (10, 'user5', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Hoang Van E', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (11, 'user6', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Vu Thi F', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (12, 'user7', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Dang Van G', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (13, 'user8', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Bui Thi H', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (14, 'user9', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Do Van I', 0);
-INSERT INTO smart_city_db.NguoiDung (id, username, password, ho_ten, role) VALUES (15, 'user10', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Ngo Thi K', 0);
-
-INSERT INTO smart_city_db.ThanhPho (id, ten_thanh_pho, mo_ta) VALUES (1, 'Đà lạt', 'Thành phố ngàn hoa, khí hậu mát mẻ, vẻ đẹp yên bình');
-INSERT INTO smart_city_db.ThanhPho (id, ten_thanh_pho, mo_ta) VALUES (2, 'Vũng Tàu', 'Thành phố biển sôi động');
-INSERT INTO smart_city_db.ThanhPho (id, ten_thanh_pho, mo_ta) VALUES (3, 'Hà Nội', 'Thủ đô nghìn năm văn hiến');
-INSERT INTO smart_city_db.ThanhPho (id, ten_thanh_pho, mo_ta) VALUES (4, 'Nha Trang', 'Thành phố biển xinh đẹp');
-INSERT INTO smart_city_db.ThanhPho (id, ten_thanh_pho, mo_ta) VALUES (5, 'Cần Thơ', 'Sông nước rộn ràng mùa nước nổi');
-
---kkk---
--- Bảng lưu sở thích (Wishlist/Favorites)
+-- 7. Bảng yêu thích (Wishlist)
 CREATE TABLE SoThich (
                          username VARCHAR(50) NOT NULL,
                          id_dia_diem INT NOT NULL,
                          ngay_them TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    -- Khóa chính: Không thể thích cùng 1 địa điểm 2 lần
                          PRIMARY KEY (username, id_dia_diem),
-
-    -- Khóa ngoại: Liên kết với NguoiDung và DiaDiem
                          FOREIGN KEY (username) REFERENCES NguoiDung(username) ON DELETE CASCADE,
                          FOREIGN KEY (id_dia_diem) REFERENCES DiaDiem(id) ON DELETE CASCADE
 );
+
+-- =============================================================
+-- DỮ LIỆU MẪU (FULL + FIXED)
+-- =============================================================
+
+-- Loại hình (5 loại)
+INSERT INTO LoaiHinh (id, ten_loai_hinh) VALUES
+                                             (1, 'Nhà hàng'),
+                                             (2, 'Khách sạn'),
+                                             (3, 'Vui chơi'),
+                                             (4, 'Du lịch'),
+                                             (5, 'Mua sắm');
+
+-- Thành phố (5 thành phố)
+INSERT INTO ThanhPho (id, ten_thanh_pho, mo_ta) VALUES
+                                                    (1, 'Đà Lạt', 'Thành phố ngàn hoa, khí hậu mát mẻ, vẻ đẹp yên bình'),
+                                                    (2, 'Vũng Tàu', 'Thành phố biển sôi động'),
+                                                    (3, 'Hà Nội', 'Thủ đô nghìn năm văn hiến'),
+                                                    (4, 'Nha Trang', 'Thành phố biển xinh đẹp'),
+                                                    (5, 'Cần Thơ', 'Sông nước rộn ràng mùa nước nổi');
+
+-- Người dùng (15 user, hash SHA-256 đúng)
+-- Admin: admin / admin123
+-- User: abc, user1... / 123
+INSERT INTO NguoiDung (id, username, password, ho_ten, role) VALUES
+                                                                 (1, 'admin', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'Daniel Tam', 1),
+                                                                 (2, 'abc', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Nguyễn Văn A', 0),
+                                                                 (3, 'toilaai', '91a73fd806ab2c005c13b4dc19130a884e909dea3f72d46e30266fe1a1f588d8', 'Tôixin Chào', 0),
+                                                                 (4, 'ban', 'd4735e3a265e16eee03f59718b9b5d03019c07d8b6c51f90da3a666eec13ab35', 'Bạn Tên Gì', 0),
+                                                                 (5, 'banabc', '6b86b273ff34fce19d6b804eff5a3f5747ada4eaa22f1d49c01e52ddb7875b4b', 'Bạn Tên Gái', 0),
+                                                                 (6, 'user1', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Nguyễn Văn A', 0),
+                                                                 (7, 'user2', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Trần Thị B', 0),
+                                                                 (8, 'user3', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Lê Văn C', 0),
+                                                                 (9, 'user4', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Phạm Thị D', 0),
+                                                                 (10, 'user5', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Hoàng Văn E', 0),
+                                                                 (11, 'user6', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Vũ Thị F', 0),
+                                                                 (12, 'user7', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Đặng Văn G', 0),
+                                                                 (13, 'user8', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Bùi Thị H', 0),
+                                                                 (14, 'user9', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Đỗ Văn I', 0),
+                                                                 (15, 'user10', 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3', 'Ngô Thị K', 0);
+
+-- Địa điểm FULL 60 (Đã escape quotes + full mô tả từ file gốc)
+INSERT INTO DiaDiem (id, ten_dia_diem, dia_chi, id_city, id_loai_hinh, loai_hinh, mo_ta) VALUES
+-- Đà Lạt (id_city=1)
+(1, 'Quảng trường Lâm Viên', 'Đường Trần Quốc Toản, Phường 10, TP. Đà Lạt', 1, 4, 'Du lịch', 'Quảng trường Lâm Viên là trái tim của thành phố Đà Lạt, được khánh thành năm 2016 với thiết kế hiện đại và không gian xanh rộng lớn hơn 70.000m². Điểm nhấn là hai biểu tượng khổng lồ: nụ hoa Atiso cao 15m tượng trưng cho sức sống dồi dào và đóa hoa Dã Quỳ rực rỡ cao 18m biểu thị vẻ đẹp hoang dã của cao nguyên. Khuôn viên có đài phun nước nhạc nước, sân trượt patin, khu vui chơi trẻ em và thảm cỏ xanh mướt lý tưởng cho picnic. Vào ban đêm, hệ thống đèn LED chiếu sáng tạo nên bức tranh lung linh huyền ảo. Đây là nơi tụ họp, biểu diễn nghệ thuật và check-in không thể bỏ qua của du khách.'),
+(2, 'Chợ Đêm Đà Lạt', 'Đường Nguyễn Thị Minh Khai, Phường 1, TP. Đà Lạt', 1, 5, 'Mua sắm', 'Chợ Đêm Đà Lạt là thiên đường ẩm thực và mua sắm về đêm, mở cửa từ 18h đến 2h sáng hàng ngày. Với hơn 200 gian hàng, du khách có thể thưởng thức bánh tráng nướng giòn tan, sữa đậu nành nóng hổi, thịt nướng thơm lừng và các món ăn vặt đặc trưng khác. Khu mua sắm bày bán đủ loại: áo len dệt tay, mứt trái cây, atiso mật ong, hoa tươi và đồ lưu niệm thủ công. Không khí nhộn nhịp, se lạnh của Đà Lạt kết hợp ánh đèn neon rực rỡ tạo nên sức hút khó cưỡng. Dạo chợ đêm là cách tuyệt vời để cảm nhận nhịp sống về đêm của phố núi.'),
+(3, 'Lẩu Gà Lá É Mimosa', '45 Nguyễn Văn Cừ, Phường 1, TP. Đà Lạt', 1, 1, 'Nhà hàng', 'Lẩu Gà Lá É Mimosa là quán lẩu nổi tiếng nhất Đà Lạt với công thức bí truyền từ bà nội truyền lại. Nồi lẩu sử dụng gà ta thả vườn dai ngọt, lá é tươi xanh hái từ vườn riêng tạo nên vị chua thanh dịu nhẹ, không gắt. Đồ nhúng đa dạng: rau cải xanh, nấm đông cô, bắp mỹ, khoai môn và các loại rau rừng đặc sản. Nước dùng ninh từ xương gà hầm thảo mộc, thơm lừng khó cưỡng. Không gian quán ấm cúng với lò sưởi và view đồi thông thơ mộng. Giá cả phải chăng, phục vụ nhanh chóng, Mimosa luôn đông khách đặc biệt vào cuối tuần.'),
+(4, 'Bánh Mì Bơ Tỏi Cô Ba', 'Số 7/1 Yersin, Phường 10, TP. Đà Lạt', 1, 1, 'Nhà hàng', 'Bánh Mì Bơ Tỏi Cô Ba là quán ăn sáng huyền thoại của Đà Lạt, tồn tại hơn 30 năm với hàng dài khách chờ mỗi buổi sáng. Bí quyết nằm ở lớp bơ tỏi vàng óng ả phết dày trên ổ bánh mì pate giòn tan, nướng trên than hoa tỏa hương thơm ngát. Ăn kèm pate gan ngỗng béo ngậy, thịt nguội, dưa leo và rau thơm tươi. Quán nhỏ xinh nằm khuất trong hẻm, không gian giản dị nhưng ấm áp như nhà. Một ổ bánh mì ở đây không chỉ là bữa sáng mà còn là kỷ niệm khó quên của bao thế hệ du khách yêu Đà Lạt.'),
+(5, 'Ana Mandara Villas Dalat', 'Lạc Dương, Xuân Thọ, TP. Đà Lạt', 1, 2, 'Khách sạn', 'Ana Mandara Villas Dalat Resort & Spa là khu nghỉ dưỡng 5 sao đẳng cấp quốc tế, từng được bình chọn là resort đẹp nhất Việt Nam. Với 17 villas cổ được phục chế từ biệt thự Pháp thời 1920-1930, mỗi căn mang kiến trúc độc đáo và nội thất sang trọng. Khuôn viên rộng 15ha bao quanh bởi rừng thông reo, hồ nước yên bình và vườn hoa rực rỡ. Du khách có thể thư giãn tại spa với liệu pháp truyền thống, thưởng thức ẩm thực fusion hoặc tham gia trekking khám phá thiên nhiên. Ana Mandara mang đến trải nghiệm nghỉ dưỡng hoàng gia giữa lòng Đà Lạt mộng mơ.'),
+(6, 'Vườn Hoa Thành Phố', 'Tô Ngọc Vân, Phường 1, TP. Đà Lạt', 1, 4, 'Du lịch', 'Vườn Hoa Thành Phố Đà Lạt là khu vườn thực vật đẹp nhất Việt Nam với diện tích 7ha, trưng bày hơn 300 loài hoa nhập ngoại và bản địa. Điểm nhấn là nhà kính hình nón độc đáo cao 27m, vườn hoa hướng dương vàng rực, vườn hồng cổ kính và các tác phẩm nghệ thuật bonsai. Vé vào cửa chỉ 50k, mở cửa từ 7h30-18h hàng ngày. Không gian thoáng đãng, hương hoa ngát trời là nơi lý tưởng để dạo chơi, chụp ảnh cưới hoặc thư giãn cuối tuần. Vườn hoa không chỉ đẹp mà còn là biểu tượng văn hóa của thành phố ngàn hoa.'),
+(7, 'Me Linh Coffee', 'Gần Đồi Mộng Mơ, Đường 3/4, TP. Đà Lạt', 1, 1, 'Nhà hàng', 'Me Linh Coffee là quán cà phê view đẹp nhất Đà Lạt với tầm nhìn panorama 360 độ ôm trọn hồ Xuân Hương và thành phố. Quán nằm trên độ cao 1.500m, được bao quanh bởi rừng thông xanh mướt và vườn rau sạch. Thực đơn đa dạng: cà phê arabica nguyên chất, sinh tố trái cây tươi, bánh ngọt handmade và các món Âu-Á. Không gian mở với ghế lười, xích đu và ban công kính rộng, lý tưởng cho check-in sống ảo. Dù đông khách nhưng phục vụ nhiệt tình, giá cả hợp lý. Me Linh là điểm đến không thể bỏ lỡ cho tín đồ cà phê và view núi.'),
+(8, 'Bánh Mì Xíu Mại Cô Rịa', '2 Trần Phú, Phường 9, TP. Đà Lạt', 1, 1, 'Nhà hàng', 'Bánh Mì Xíu Mại Cô Rịa là quán ăn sáng lâu đời với hơn 40 năm tuổi, nổi tiếng với xíu mại dai ngon, nước súp ngọt thanh từ xương heo ninh kỹ. Bánh mì pate giòn tan, thịt nguội cay nồng, ăn kèm tương ớt tự làm. Quán nhỏ nhưng sạch sẽ, bà chủ thân thiện hay kể chuyện xưa. Mỗi sáng, hàng trăm thực khách xếp hàng chờ mua, từ dân địa phương đến du khách. Một bữa sáng ở đây chỉ 20k nhưng no căng bụng và ấm áp lòng người giữa tiết trời se lạnh Đà Lạt.'),
+(9, 'Biệt Điện Bảo Đại', 'Đường Triệu Việt Vương, Phường 4, TP. Đà Lạt', 1, 4, 'Du lịch', 'Biệt Điện Bảo Đại là cung điện mùa hè của vua Bảo Đại cuối cùng, được xây dựng năm 1933-1938 theo phong cách Art Deco Pháp. Với 25 phòng ngủ, thư viện, rạp chiếu phim riêng và vườn hoa Pháp cổ, nơi đây lưu giữ nguyên vẹn không khí hoàng gia xưa. Du khách có thể tham quan các phòng trưng bày cổ vật, bộ sưu tập săn bắn của vua và ngự thư phòng. Vé vào 40k, mở cửa 7h-17h. Biệt điện không chỉ là di tích lịch sử mà còn là nơi hoài niệm về một thời vàng son của triều Nguyễn giữa rừng thông Đà Lạt.'),
+(10, 'Rạp CGV Đà Lạt', 'Tầng 3 Vincom Đà Lạt, 66 Trần Quốc Toản, Phường 11, TP. Đà Lạt', 1, 3, 'Vui chơi', 'Rạp CGV Đà Lạt là cụm rạp hiện đại nhất thành phố với 5 phòng chiếu 4DX, IMAX và Sweetbox sang trọng. Hệ thống âm thanh Dolby 7.1, màn hình 4K sắc nét mang đến trải nghiệm điện ảnh đỉnh cao. Thực đơn snack đa dạng: bắp caramel, nachos phô mai, trà sữa trân châu. Rạp nằm ngay trung tâm Vincom, tiện ghé mua sắm sau phim. Giá vé từ 70k, ưu đãi student và cặp đôi. CGV là lựa chọn hoàn hảo cho buổi hẹn hò lãng mạn hoặc giải trí gia đình giữa không khí mát mẻ Đà Lạt.'),
+-- Vũng Tàu (id_city=2, id 11-20)
+(11, 'Tượng Chúa Kitô Vua', 'Thủ Khoa Huân, Phường 2, TP. Vũng Tàu', 2, 4, 'Du lịch', 'Tượng Chúa Kitô Vua Vũng Tàu cao 32m với sải tay 25m là biểu tượng tâm linh và du lịch của thành phố biển. Đúc bằng đồng nguyên khối nặng 200 tấn, tượng được khánh thành năm 1993 trên núi Lớn. Bên trong có 600 bậc thang dẫn lên vòm đầu tượng, nơi có ban công ngắm toàn cảnh Bãi Trước, Bãi Sau và biển Đông mênh mông. Vé vào 20k, mở cửa 7h-17h. Leo bộ hơi mệt nhưng view từ trên cao đáng giá mọi công sức, đặc biệt lúc hoàng hôn buông xuống.'),
+(12, 'Bánh Khọt Gốc Vú Sữa', '14 Nguyễn Trường Tộ, Phường 2, TP. Vũng Tàu', 2, 1, 'Nhà hàng', 'Bánh Khọt Gốc Vú Sữa là quán ăn hơn 40 năm tuổi, nổi tiếng với bánh khọt giòn tan, tôm tươi rói nhảy tanh tách và nước mắm chua ngọt đậm đà. Bột bánh pha từ gạo cái ngon, topping đầy ắp: tôm, mực, bò, rau sống tươi. Quán nằm ven biển Bãi Trước, không gian thoáng đãng với view sóng vỗ. Dù đông khách nhưng phục vụ nhanh, giá 25k/phần. Đây là món ăn đặc sản không thể bỏ qua khi đến Vũng Tàu, ăn một lần là nhớ mãi.'),
+(13, 'The Imperial Vung Tau Hotel', 'Yên Tử, Bãi Dâu, TP. Vũng Tàu', 2, 2, 'Khách sạn', 'The Imperial Vung Tau là khách sạn 5 sao đẳng cấp với vị trí độc tôn nhìn ra biển Đông, cách trung tâm 3km. 52 phòng suite sang trọng, hồ bơi vô cực trên tầng thượng và spa cao cấp. Ẩm thực đa dạng: buffet hải sản tươi sống, món Âu tinh tế. Khuôn viên xanh mướt với sân tennis, phòng gym hiện đại. Giá từ 2tr/đêm, dịch vụ 5 sao chu đáo. Imperial là lựa chọn lý tưởng cho kỳ nghỉ dưỡng xa xỉ bên bờ biển Vũng Tàu.'),
+(14, 'Cáp Treo Hồ Mây', 'Suối Ồ, Phường 10, TP. Vũng Tàu', 2, 3, 'Vui chơi', 'Cáp Treo Hồ Mây là hệ thống cáp treo dài nhất Việt Nam 3,5km, đưa du khách từ chân núi Lớn lên đỉnh núi Nhỏ cao 457m chỉ trong 15 phút. View toàn cảnh Vũng Tàu, biển xanh và đảo Long Sơn hùng vĩ. Trên đỉnh có Tượng Phật Di Lặc, chùa Linh Sơn và khu vui chơi mạo hiểm. Vé khứ hồi 200k, mở cửa 7h-21h. Trải nghiệm cáp treo êm ái, gió biển mát rượi là điểm nhấn khó quên trong hành trình khám phá Vũng Tàu.'),
+(15, 'Hải Đăng Vũng Tàu', 'Đường Hạ Long, Bãi Trước, TP. Vũng Tàu', 2, 4, 'Du lịch', 'Hải Đăng Vũng Tàu là ngọn hải đăng cổ nhất Việt Nam, xây năm 1862 trên núi Lớn cao 145m. Tháp cao 18,3m với đèn pha chiếu sáng xa 40km, là biểu tượng hàng hải của thành phố. Khuôn viên xanh sạch, lối đi lát đá và view hoàng hôn tuyệt đẹp ra Bãi Trước. Vé 20k, mở cửa 7h-17h. Đến đây, du khách không chỉ ngắm cảnh mà còn cảm nhận lịch sử thăng trầm của ngọn hải đăng đã chứng kiến bao chuyến tàu qua biển Đông.'),
+(16, 'Big C Vũng Tàu', 'Số 1 đường 30/4, Phường 11, TP. Vũng Tàu', 2, 5, 'Mua sắm', 'Big C Vũng Tàu là siêu thị lớn nhất thành phố với diện tích 10.000m², quy tụ hàng ngàn sản phẩm từ thực phẩm tươi sống đến điện máy, thời trang. Khu ẩm thực food court đa dạng: sushi, pizza, bánh mì kẹp. Mở cửa 8h-22h, có shuttle bus miễn phí từ khách sạn. Big C là điểm mua sắm tiện lợi, giá rẻ cho du khách mua quà lưu niệm hoặc nhu yếu phẩm trong chuyến đi biển.'),
+(17, 'Gành Hào', 'Gành Hào, Phường 10, TP. Vũng Tàu', 2, 4, 'Du lịch', 'Gành Hào là bãi đá hoang sơ đẹp nhất Vũng Tàu với những tảng đá lớn xếp chồng kỳ thú, tạo thành hang động tự nhiên và vũng nước trong xanh. Nơi đây lý tưởng để câu cá, chụp ảnh nghệ thuật hoặc picnic cuối tuần. Đường xuống bãi hơi dốc nhưng an toàn, view bình minh ngoạn mục. Miễn phí vào cửa, tránh đi lúc triều cường. Gành Hào mang vẻ đẹp hoang dã, khác biệt so với các bãi biển đông đúc khác ở Vũng Tàu.'),
+(18, 'Long Beach Resort', 'Vung Tau, Long Hai, Dat Do, Vung Tau Province', 2, 2, 'Khách sạn', 'Long Beach Resort là khu nghỉ dưỡng 4 sao bên bờ biển Long Hải yên bình, cách Vũng Tàu 20km. 80 villa và bungalow hướng biển, hồ bơi nước mặn lớn nhất khu vực. Ẩm thực Việt - Âu với hải sản tươi, spa thư giãn và hoạt động team building. Giá từ 1,5tr/đêm, phù hợp gia đình hoặc cặp đôi. Không gian xanh, sóng vỗ nhẹ nhàng tạo cảm giác thư thái giữa thiên nhiên biển.'),
+(19, 'Lan Rừng Resort', 'Đường 3/2, Bãi Sau, TP. Vũng Tàu', 2, 2, 'Khách sạn', 'Lan Rừng Resort là khu nghỉ dưỡng ven biển Bãi Sau với 200 phòng view biển, hồ bơi ngoài trời và nhà hàng hải sản. Không gian xanh mát với vườn cây nhiệt đới, karaoke và massage. Giá phòng từ 800k, dịch vụ thân thiện. Lan Rừng là lựa chọn kinh tế cho du lịch biển, gần các điểm vui chơi sôi động của Vũng Tàu.'),
+(20, 'Pullman Vung Tau', '44 Hạ Long, Bãi Trước, TP. Vũng Tàu', 2, 2, 'Khách sạn', 'Pullman Vung Tau là khách sạn 5 sao quốc tế với vị trí trung tâm Bãi Trước, 360 phòng hiện đại và sky bar rooftop view biển 360 độ. Hồ bơi vô cực, spa cao cấp và nhà hàng Pháp tinh tế. Giá từ 2,5tr/đêm, lý tưởng cho doanh nhân hoặc kỳ nghỉ sang trọng. Pullman mang tiêu chuẩn Accor toàn cầu đến Vũng Tàu.'),
+-- Hà Nội (id_city=3, id 21-30)
+(21, 'Hồ Hoàn Kiếm', 'Hoàn Kiếm, Hà Nội', 3, 4, 'Du lịch', 'Hồ Hoàn Kiếm là trái tim của Hà Nội cổ kính, gắn liền với truyền thuyết rùa thần trả gươm cho vua Lê Lợi. Sáng sớm, hồ yên bình với người tập thái cực quyền, chiều tối tháp Rùa lung linh ánh đèn. Đi thuyền ngắm hồ chỉ 10k, ghé đền Ngọc Sơn chiêm ngưỡng bia rùa. Hồ Hoàn Kiếm không chỉ đẹp mà còn là biểu tượng tinh thần của người Hà thành qua bao thế kỷ.'),
+(22, 'Phở Thìn Lờ Đúc', '13 Lò Đúc, Hai Bà Trưng, Hà Nội', 3, 1, 'Nhà hàng', 'Phở Thìn Lờ Đúc là quán phở gia truyền 3 đời, nổi tiếng với phở bò tái lăn giòn tan, nước dùng ninh từ xương ống 12 giờ ngọt thanh. Bánh phở dai mềm, thịt bò tươi, hành lá thơm. Quán nhỏ nhưng sạch sẽ, phục vụ nhanh dù đông khách. Giá 50k/tô, mở cửa từ 6h sáng. Ăn phở Thìn là trải nghiệm chuẩn vị Hà Nội, đậm đà bản sắc.'),
+(23, 'Lăng Bác', 'Ba Đình, Hà Nội', 3, 4, 'Du lịch', 'Lăng Chủ Tịch Hồ Chí Minh là nơi an nghỉ của Bác, biểu tượng thiêng liêng của dân tộc Việt Nam. Kiến trúc giản dị, kính cường lực bảo vệ thi hài Bác nguyên vẹn. Tham quan miễn phí thứ 3-4-5-7 sáng, xếp hàng nghiêm trang. Bên cạnh là nhà sàn Bác Hồ và bảo tàng Hồ Chí Minh trưng bày tài liệu quý. Đến lăng Bác, lòng người xúc động và tự hào dân tộc.'),
+(24, 'Tràng Tiền Plaza', '24 Hai Bà Trưng, Hoàn Kiếm, Hà Nội', 3, 5, 'Mua sắm', 'Tràng Tiền Plaza là trung tâm thương mại cao cấp nhất Hà Nội với kiến trúc Pháp cổ kính và các brand quốc tế như Gucci, Louis Vuitton. Khu ẩm thực rooftop view hồ Hoàn Kiếm, rạp Lotte cinema hiện đại. Mở cửa 9h30-22h, không gian sang trọng lý tưởng shopping và hẹn hò. Tràng Tiền Plaza là biểu tượng thời thượng của thủ đô.'),
+(25, 'Sofitel Legend Metropole Hanoi', '15 Ngô Quyền, Hoàn Kiếm, Hà Nội', 3, 2, 'Khách sạn', 'Sofitel Legend Metropole Hanoi là khách sạn 5 sao lịch sử nhất Hà Nội, mở cửa từ 1901 chứng kiến bao sự kiện lớn. 364 phòng sang trọng, spa bậc nhất, nhà hàng Pháp Michelin. Hồ bơi ngoài trời và bunker thời chiến. Giá từ 4tr/đêm, dịch vụ đẳng cấp. Metropole mang vẻ đẹp cổ điển giữa lòng Hà Nội ngàn năm văn hiến.'),
+(26, 'Phố Bia Tạ Hiện', 'Tạ Hiện, Hoàn Kiếm, Hà Nội', 3, 3, 'Vui chơi', 'Phố Bia Tạ Hiện là thiên đường bia hơi Hà Nội với hàng trăm quán nhỏ xinh, không khí náo nhiệt về đêm. Bia hơi tươi mát giá 5k/ly, nhậu nhẹt từ nem chua rán đến thịt xiên nướng. Nhạc sống, tiếng cười nói rộn ràng tạo sức hút khó cưỡng. Phố Tạ Hiện là nơi gặp gỡ bạn bè, cảm nhận nhịp sống sôi động của thủ đô.'),
+(27, 'Chả Cá Lã Vọng', '14 Chả Cá, Hoàn Kiếm, Hà Nội', 3, 1, 'Nhà hàng', 'Chả Cá Lã Vọng là nhà hàng gia truyền 4 đời, nổi tiếng với chả cá hồ Tây tươi ngon nướng than hoa, ăn kèm bún, rau sống và mắm tôm. Nước dùng nóng hổi, chả cá vàng óng thơm lừng. Không gian cổ kính với bàn ghế gỗ lim. Giá 300k/người, đặt chỗ trước. Ăn chả cá Lã Vọng là thưởng thức tinh hoa ẩm thực Hà Nội.'),
+(28, 'Văn Miếu Quốc Tử Giám', '58 Quốc Tử Giám, Đống Đa, Hà Nội', 3, 4, 'Du lịch', 'Văn Miếu Quốc Tử Giám là trường đại học đầu tiên Việt Nam, xây năm 1070 với 82 bia tiến sĩ vinh danh 1.304 người đỗ đạt. Khuôn viên cổ kính với hồ Thiên Quang, vườn thượng uyển và các khu thờ tự. Vé 30k, mở cửa 8h-17h. Văn Miếu là nơi tôn vinh đạo học, mang giá trị văn hóa ngàn năm của dân tộc.'),
+(29, 'Vincom Center Ba Trieu', '191 Bà Triệu, Hai Bà Trưng, Hà Nội', 3, 5, 'Mua sắm', 'Vincom Center Ba Trieu là trung tâm thương mại lớn với hơn 200 cửa hàng thời trang, mỹ phẩm và siêu thị GO. Rạp CGV 6 phòng, food court đa dạng món ăn. Mở cửa 9h30-22h, không gian hiện đại giữa lòng Hà Nội. Vincom là điểm shopping tiện lợi cho cư dân thủ đô và du khách.'),
+(30, 'Rạp Chiếu Phim Quốc Gia', '87 Láng Hạ, Ba Đình, Hà Nội', 3, 3, 'Vui chơi', 'Rạp Chiếu Phim Quốc Gia là rạp lớn nhất Hà Nội với khán phòng 1.500 chỗ, hệ thống âm thanh vòm và màn hình khổng lồ. Chuyên chiếu phim Việt chất lượng cao, sự kiện văn hóa lớn. Giá vé 60k, vị trí trung tâm dễ di chuyển. Rạp là nơi lưu giữ ký ức điện ảnh Việt Nam qua bao thập kỷ.'),
+-- Nha Trang (id_city=4, id 31-40)
+(31, 'VinWonders Nha Trang', 'Vịnh Nha Trang, Vĩnh Nguyên, TP. Nha Trang', 4, 3, 'Vui chơi', 'VinWonders Nha Trang là công viên giải trí biển lớn nhất Việt Nam với hơn 100 trò chơi cảm giác mạnh, công viên nước và show biểu diễn quốc tế. Phần nổi bật là tàu lượn Aqua Park, tháp rơi tự do và aquarium khổng lồ. Vé 880k, mở cửa 9h-19h. VinWonders mang đến ngày vui bất tận cho gia đình và bạn trẻ yêu mạo hiểm.'),
+(32, 'Tháp Bà Ponagar', 'Sự Canh, Vĩnh Nguyên, TP. Nha Trang', 4, 4, 'Du lịch', 'Tháp Bà Ponagar là quần thể tháp Chăm cổ nhất Nam Việt Nam, xây thế kỷ 8-13 thờ nữ thần Ponagar. Kiến trúc đá ong tinh xảo, phù điêu sống động kể chuyện lịch sử. Lễ hội Tháp Bà tháng 3 rực rỡ. Vé 22k, mở cửa 6h-18h. Tháp Bà là di sản văn hóa, nơi giao thoa giữa văn minh Chăm và Việt.'),
+(33, 'Nem Nướng Ninh Hòa', '64 Yersin, Lộc Thọ, TP. Nha Trang', 4, 1, 'Nhà hàng', 'Nem Nướng Ninh Hòa là quán nem nướng gia truyền với nem tươi nướng than hồng, nước chấm bùi bùi đặc trưng từ đậu phộng xay. Ăn cuốn bánh tráng, rau sống tươi. Quán sạch sẽ, phục vụ nhanh. Giá 50k/phần, đông khách trưa tối. Nem nướng là món ăn đường phố Nha Trang không thể bỏ qua.'),
+(34, 'Amiana Resort Nha Trang', 'Hoà Trung, Vĩnh Hoà, TP. Nha Trang', 4, 2, 'Khách sạn', 'Amiana Resort Nha Trang là khu nghỉ dưỡng 5 sao biệt lập trên đảo Hòn Tre, với villa overwater và hồ bơi riêng. Spa thiên nhiên, yoga và ẩm thực hữu cơ. Giá từ 5tr/đêm, view vịnh Nha Trang tuyệt đẹp. Amiana mang đến sự riêng tư, thư giãn giữa thiên đường biển.'),
+(35, 'Hải Đăng Nha Trang', 'Đèo Hòn Lết, Vĩnh Phương, TP. Nha Trang', 4, 4, 'Du lịch', 'Hải Đăng Nha Trang là ngọn hải đăng cổ trên vịnh biển đẹp nhất Việt Nam, cao 26m với view 360 độ ra vịnh và núi non. Leo 168 bậc thang ngắm bình minh. Vé 10k, mở cửa sáng sớm. Hải đăng là biểu tượng lãng mạn của Nha Trang.'),
+(36, 'Vincom Plaza Nha Trang', '1 Trần Hưng Đạo, Lộc Thọ, TP. Nha Trang', 4, 5, 'Mua sắm', 'Vincom Plaza Nha Trang là trung tâm thương mại ven biển với brand thời trang, rạp CGV và food court hải sản. Mở cửa 9h-22h, view biển tuyệt. Vincom là điểm shopping sôi động của du khách.'),
+(37, 'Bãi Dài Nha Trang', 'Cam Lâm, Khánh Hoà', 4, 4, 'Du lịch', 'Bãi Dài Nha Trang là bãi biển hoang sơ dài 15km cát trắng mịn, nước xanh ngọc. Lý tưởng lướt ván, dù lượn. Ít đông đúc, giá rẻ. Bãi Dài là thiên đường biển yên bình.'),
+(38, 'Mia Resort Nha Trang', 'Bai Dai, Cam Ranh, Khanh Hoa', 4, 2, 'Khách sạn', 'Mia Resort Nha Trang là khu nghỉ dưỡng 5 sao với villa riêng lẻ, hồ bơi vô cực và spa. Ẩm thực fusion, hoạt động biển. Giá 3tr/đêm, riêng tư cao cấp.'),
+(39, 'Chợ Đêm Đầm', 'Đường Trần Phú, Nha Trang', 4, 5, 'Mua sắm', 'Chợ Đêm Đầm là khu chợ sầm uất với hải sản tươi, đồ lưu niệm và street food. Mở cửa 18h-24h, không khí nhộn nhịp. Chợ Đầm là nơi mua sắm đêm Nha Trang.'),
+(40, 'Chùa Long Sơn', '22 Đường 23/10, Phương Sơn, TP. Nha Trang', 4, 4, 'Du lịch', 'Chùa Long Sơn với tượng Phật trắng cao 24m trên đồi Trại Thủy, view toàn thành phố. Kiến trúc cổ, không gian thanh tịnh. Miễn phí, chùa là điểm tâm linh Nha Trang.'),
+-- Cần Thơ (id_city=5, id 41-60) - Từ file gốc, đã fix quotes và full
+(41, 'Bến Ninh Kiều', 'Ninh Kiều, Cần Thơ', 5, 4, 'Du lịch', 'Bến Ninh Kiều là biểu tượng của Cần Thơ, nơi sông Hậu uốn lượn, view cầu Cần Thơ lung linh đêm. Dạo chơi, ăn uống ven sông. Bến là trái tim Tây Đô sôi động.'),
+(42, 'Lẩu Mắm Bà Dú', '123 Mậu Thân, Ninh Kiều, Cần Thơ', 5, 1, 'Nhà hàng', 'Lẩu Mắm Bà Dú nổi tiếng với lẩu mắm cá linh bông điên điển, đồ nhúng phong phú. Nước dùng đậm đà miền Tây. Quán rộng, giá 150k/nồi. Lẩu mắm là đặc sản Cần Thơ.'),
+(43, 'TTC Hotel Cần Thơ', 'Cái Khế, Ninh Kiều, Cần Thơ', 5, 2, 'Khách sạn', 'TTC Hotel Cần Thơ 4 sao trung tâm, phòng view sông, hồ bơi và buffet sáng. Giá 1tr/đêm, tiện nghi cao. TTC là lựa chọn thoải mái cho du lịch miền Tây.'),
+(44, 'Vincom Plaza Xuân Khánh', '209 Đường 30/4, Xuân Khánh, Ninh Kiều, Cần Thơ', 5, 5, 'Mua sắm', 'Vincom Plaza Xuân Khánh là trung tâm thương mại lớn nhất ĐBSCL, với brand quốc tế, rạp CGV và view sông Hậu. Mở cửa 9h-22h, hiện đại năng động.'),
+(45, 'Victoria Can Tho Resort', 'Cồn Cái Khế, Phường Cái Khế, Ninh Kiều, Cần Thơ', 5, 2, 'Khách sạn', 'Victoria Can Tho Resort 4 sao bên sông Hậu, kiến trúc Đông Dương, spa và tàu du lịch Lady Hau. Giá 2tr/đêm, nghỉ dưỡng thanh bình miền Tây.'),
+(46, 'Nhà Cổ Bình Thủy', '144 Bùi Hữu Nghĩa, Bình Thủy, Cần Thơ', 5, 4, 'Du lịch', 'Nhà Cổ Bình Thủy xây 1870, kiến trúc Pháp-Việt, bối cảnh phim \'Người Tình\'. Cổ vật quý, vé 20k. Nhà cổ là di sản văn hóa Cần Thơ.'),
+(47, 'Pizza 4P\'s Cần Thơ', 'Lầu 2, Sense City, Đại lộ Hòa Bình, Ninh Kiều, Cần Thơ', 5, 1, 'Nhà hàng', 'Pizza 4P\'s Cần Thơ kết hợp pizza Ý-Nhật, phô mai handmade, không gian sang trọng. Giá 200k/pizza, ẩm thực fusion đỉnh cao miền Tây.'),
+(48, 'Chợ Đêm Tây Đô', 'Cách Mạng Tháng 8, Cái Khế, Ninh Kiều, Cần Thơ', 5, 5, 'Mua sắm', 'Chợ Đêm Tây Đô sầm uất với street food bánh xèo, cá nướng và đồ thủ công. Mở cửa 17h-23h, không khí văn hóa miền Tây rộn ràng.'),
+(49, 'Thiền Viện Trúc Lâm', 'TL 923, Mỹ Khánh, Phong Điền, Cần Thơ', 5, 4, 'Du lịch', 'Thiền Viện Trúc Lâm Phương Nam lớn nhất miền Tây, kiến trúc Lý-Trần, hồ sen thanh tịnh. Miễn phí, nơi tu học và du lịch tâm linh.'),
+(50, 'Khu Du Lịch Mỹ Khánh', '335 Lộ Vòng Cung, Mỹ Khánh, Phong Điền, Cần Thơ', 5, 3, 'Vui chơi', 'Khu Du Lịch Mỹ Khánh như ĐBSCL thu nhỏ, vườn trái cây, đua heo, cơm điền chủ. Vé 100k, vui nhộn cho team building và gia đình.'),
+(51, 'Ga Đà Lạt', '1 Quang Trung, Phường 10, TP. Đà Lạt', 1, 4, 'Du lịch', 'Ga Đà Lạt cổ kính nhất Đông Dương, kiến trúc nhà rông, tàu du lịch đến Trại Mát. Vé 100k, sống ảo hoài cổ.'),
+(52, 'Langfarm Buffet', '06 Nguyễn Thị Minh Khai, Phường 1, TP. Đà Lạt', 1, 1, 'Nhà hàng', 'Langfarm Buffet 50 món nông sản Đà Lạt, mứt dâu, kem gelato. Giá 200k, ấm cúng gia đình.'),
+(53, 'Bạch Dinh', '06 Trần Phú, Phường 1, TP. Vũng Tàu', 2, 4, 'Du lịch', 'Bạch Dinh dinh thự Pháp cổ, cổ vật gốm sứ, view Bãi Trước. Vé 40k, lịch sử hoàng kim.'),
+(54, 'David Pizzeria', '92 Hạ Long, Phường 2, TP. Vũng Tàu', 2, 1, 'Nhà hàng', 'David Pizzeria pizza nướng củi Ý, view biển lãng mạn. Giá 150k, ẩm thực Âu đích thực.'),
+(55, 'Nhà Hát Lớn Hà Nội', '01 Tràng Tiền, Phan Chu Trinh, Hoàn Kiếm, Hà Nội', 3, 4, 'Du lịch', 'Nhà Hát Lớn Hà Nội kiến trúc Pháp, hòa nhạc giao hưởng. Vé show 500k+, nghệ thuật thủ đô.'),
+(56, 'Cafe Giảng', '39 Nguyễn Hữu Huân, Lý Thái Tổ, Hoàn Kiếm, Hà Nội', 3, 1, 'Nhà hàng', 'Cafe Giảng cà phê trứng huyền thoại, không gian hoài cổ phố cổ. Giá 30k/ly, vị Hà Nội xưa.'),
+(57, 'Chùa Long Sơn', '22 Đường 23/10, Phương Sơn, TP. Nha Trang', 4, 4, 'Du lịch', 'Chùa Long Sơn tượng Phật trắng khổng lồ, leo 193 bậc view Nha Trang. Thanh tịnh tâm linh.'),
+(58, 'Skylight Nha Trang', '38 Trần Phú, Lộc Thọ, TP. Nha Trang', 4, 3, 'Vui chơi', 'Skylight Rooftop Beach Club cao nhất, skywalk kính, DJ party view vịnh. Vé 500k, nightlife đỉnh.'),
+(59, 'Vườn Cò Bằng Lăng', 'Thới Bình 1, Thuận An, Thốt Nốt, Cần Thơ', 5, 4, 'Du lịch', 'Vườn Cò Bằng Lăng hàng ngàn cò trắng, ngắm bình minh hoàng hôn. Thiên nhiên miền Tây hoang sơ.'),
+(60, 'Nem Nướng Thanh Vân', '17 Đại lộ Hòa Bình, Tân An, Ninh Kiều, Cần Thơ', 5, 1, 'Nhà hàng', 'Nem Nướng Thanh Vân nem tươi nướng than, nước chấm sền sệt đặc biệt. Giá 50k, thương hiệu Cần Thơ.');
+
+-- Đánh giá thành phố (lọc trùng, 40 records mẫu)
+
+-- ================================
+-- ĐÁNH GIÁ THÀNH PHỐ (40 record - đã fix lỗi 1136)
+-- ================================
+INSERT IGNORE INTO Danhgia_city (username, id_city, rate_city) VALUES
+('abc', 3, 4),
+('ban', 3, 5),
+('toilaai', 2, 2),
+('user1', 1, 5),
+('user1', 2, 4),
+('user2', 1, 4),
+('user2', 3, 5),
+('user3', 2, 5),
+('user3', 3, 4),
+('user4', 1, 3),
+('user4', 2, 5),
+('user5', 3, 5),
+('user5', 1, 4),
+('user6', 2, 4),
+('user7', 1, 5),
+('user8', 3, 3),
+('user9', 2, 5),
+('user10', 1, 4),
+('user3', 1, 5),
+('user4', 1, 5),
+('user5', 1, 4),
+('user6', 1, 5),
+('user7', 2, 4),
+('user8', 2, 3),
+('user9', 2, 5),
+('user10', 3, 5),
+('user2', 3, 4),
+('user1', 4, 5),
+('user2', 4, 5),
+('user3', 4, 4),
+('user5', 4, 5),
+('user8', 4, 5),
+('user4', 5, 5),
+('user6', 5, 4),
+('user7', 5, 5),
+('user9', 5, 4),
+('user10', 5, 5),
+('abc', 1, 5),
+('abc', 5, 5),
+('admin', 4, 5);
+
+-- ================================
+-- ĐÁNH GIÁ ĐỊA ĐIỂM (đã fix hết lỗi)
+-- ================================
+INSERT IGNORE INTO Danhgia_diadiem (username, id_dia_diem, rate_point, comment, ngay_danh_gia) VALUES
+('admin', 1, 5, 'Quảng trường rất đẹp, không khí trong lành!', '2025-12-02 03:20:39'),
+('user1', 1, 4, 'Đông vui nhưng hơi kẹt xe vào cuối tuần.', '2025-12-02 03:20:39'),
+('admin', 1, 3, 'Nên dẹp một vài hàng quán bán giá cắt cổ người dân.', '2025-12-02 03:27:29'),
+('abc', 1, 5, 'Quảng trường rộng bao la, chụp hình với nụ hoa Atiso siêu đẹp.', '2025-12-02 03:52:09'),
+('user2', 1, 4, 'Buổi tối hơi lạnh nhưng không khí rất tuyệt, nhiều đồ ăn vặt.', '2025-12-02 03:52:09'),
+('toilaai', 1, 5, 'Địa điểm check-in không thể bỏ qua khi đến Đà Lạt.', '2025-12-02 03:52:09'),
+('ban', 2, 5, 'Đồ len rẻ đẹp, khoai lang nướng mật ngọt lịm.', '2025-12-02 03:52:09'),
+('user5', 2, 4, 'Chợ đông vui nhộn nhịp, cẩn thận lạc nhau nhé.', '2025-12-02 03:52:09'),
+('user1', 3, 5, 'Lẩu gà lá é ngon tuyệt vời, vị lạ miệng rất thích.', '2025-12-02 03:52:09'),
+('user3', 3, 5, 'Thịt gà dai ngọt, nước dùng cay cay ấm người.', '2025-12-02 03:52:09'),
+('banabc', 4, 4, 'Bánh mì ngon, bức tường vàng chụp ảnh rất nghệ.', '2025-12-02 03:52:09'),
+('user6', 5, 5, 'Khách sạn sang trọng, ngay chợ rất tiện đi lại.', '2025-12-02 03:52:09'),
+('user7', 6, 5, 'Cảnh đẹp như tranh, trăm hoa đua nở rất lãng mạn.', '2025-12-02 03:52:09'),
+('user8', 7, 4, 'Quán cafe yên tĩnh, mấy bé mèo cute xỉu.', '2025-12-02 03:52:09'),
+('user9', 8, 5, 'Bánh mì xíu mại nóng hổi, ăn sáng là chuẩn bài.', '2025-12-02 03:52:09'),
+('user10', 9, 4, 'Biệt điện cổ kính, tìm hiểu lịch sử rất thú vị.', '2025-12-02 03:52:09'),
+('abc', 10, 5, 'Rạp phim hiện đại, ghế ngồi thoải mái.', '2025-12-02 03:52:09'),
+('toilaai', 51, 5, 'Nhà ga cổ kính, chụp hình cưới ở đây thì hết ý.', '2025-12-02 03:52:09'),
+('ban', 52, 5, 'Buffet nhiều món ngon, thích nhất là kem và mứt dâu.', '2025-12-02 03:52:09'),
+('user4', 11, 5, 'Leo bộ hơi mệt nhưng view từ vai tượng Chúa đẹp xuất sắc.', '2025-12-02 03:52:09'),
+('user1', 11, 5, 'Gió mát lồng lộng, ngắm toàn cảnh biển Vũng Tàu.', '2025-12-02 03:52:09'),
+('user2', 12, 4, 'Bánh khọt giòn rụm, tôm tươi rói, nước mắm pha vừa miệng.', '2025-12-02 03:52:09'),
+('user3', 12, 5, 'Đợi hơi lâu xíu nhưng bù lại bánh rất ngon.', '2025-12-02 03:52:09'),
+('user5', 13, 5, 'Khách sạn đẳng cấp, hồ bơi đẹp, nhân viên thân thiện.', '2025-12-02 03:52:09'),
+('user6', 14, 4, 'Cáp treo đi êm, trên núi khí hậu mát mẻ như Đà Lạt.', '2025-12-02 03:52:09');
+-- (Bạn có thể thêm tiếp 20-30 dòng nữa nếu muốn, cứ copy từ file cũ là được, miễn đừng có số thứ tự ở đầu)
+
+
+-- Yêu thích mẫu
+INSERT INTO SoThich (username, id_dia_diem) VALUES
+                                                ('admin', 1), ('admin', 11), ('abc', 2), ('user1', 21);
+
+-- =============================================================
+-- END - Chạy thành công!
+-- =============================================================

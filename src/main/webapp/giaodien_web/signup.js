@@ -8,7 +8,7 @@ document.getElementById('btnSignup').addEventListener('click', function() {
         return;
     }
 
-    fetch('/SMcity/api/dang-ky', {
+    fetch('/smcity/api/dang-ky', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'username=' + u + '&password=' + p + '&hoten=' + n
@@ -22,5 +22,5 @@ document.getElementById('btnSignup').addEventListener('click', function() {
                 alert("Lỗi: " + data.message);
             }
         })
-        .catch(err => console.log(err));
+       .catch(err => console.log(err));
 });

@@ -3,7 +3,7 @@ document.getElementById('btn').addEventListener('click', function() {
     var p = document.getElementById('pass').value;
 
     // Lưu ý đường dẫn: /SMcity/api/dang-nhap
-    fetch('/SMcity/api/dang-nhap', {
+    fetch('/api/dang-nhap', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'username=' + u + '&password=' + p
