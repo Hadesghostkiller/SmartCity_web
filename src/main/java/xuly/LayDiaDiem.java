@@ -49,9 +49,9 @@ public class LayDiaDiem extends HttpServlet {
                 sql += " GROUP BY d.id, d.ten_dia_diem, d.dia_chi, d.anh_dd, d.id_loai_hinh ";
 
                 if ("hot".equals(sort)) {
-                    sql += " ORDER BY diem_tb DESC LIMIT 8";
+                    sql += " ORDER BY diem_tb DESC LIMIT 10";
                 } else {
-                    sql += " ORDER BY d.id DESC LIMIT 8";
+                    sql += " ORDER BY d.id DESC LIMIT 50";
                 }
 
                 PreparedStatement stmt = conn.prepareStatement(sql);

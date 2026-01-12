@@ -13,6 +13,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 @WebServlet("/api/chi-tiet-dia-diem")
 public class ChiTietDiaDiem extends HttpServlet {
@@ -28,10 +30,13 @@ public class ChiTietDiaDiem extends HttpServlet {
 
         if (conn != null && id != null) {
             try {
-                // 1. Lấy thông tin địa điểm (JOIN BẢNG LOAIHINH)
-                String sql = "SELECT d.*, l.ten_loai_hinh FROM DiaDiem d " +
+                // JOIN 3 BẢNG: DiaDiem, LoaiHinh, ThanhPho
+                String sql = "SELECT d.*, l.ten_loai_hinh, t.ten_thanh_pho, d.map_link " +
+                        "FROM DiaDiem d " +
                         "LEFT JOIN LoaiHinh l ON d.id_loai_hinh = l.id " +
+                        "LEFT JOIN ThanhPho t ON d.id_city = t.id " +
                         "WHERE d.id = ?";
+
                 PreparedStatement stmt = conn.prepareStatement(sql);
                 stmt.setString(1, id);
                 ResultSet rs = stmt.executeQuery();
@@ -41,15 +46,21 @@ public class ChiTietDiaDiem extends HttpServlet {
                     String diaChi = rs.getString("dia_chi");
                     String moTa = rs.getString("mo_ta");
 
-                    // Lấy tên loại hình chuẩn
-                    String loaiHinh = rs.getString("ten_loai_hinh");
-                    if(loaiHinh == null) loaiHinh = "Khác";
+                    // --- SỬA LỖI Ở ĐÂY ---
+                    String tenLoai = rs.getString("ten_loai_hinh"); // Biến tên là tenLoai
+                    if(tenLoai == null) tenLoai = "Khác";           // Phải check tenLoai
+
+                    String tenTP = rs.getString("ten_thanh_pho");
+                    String mapLink = rs.getString("map_link");
+                    String anhList = rs.getString("anh_dd");
+
+                    if(moTa != null) moTa = moTa.replace("\"", "\\\"").replace("\n", " ");
+                    if(anhList == null || anhList.isEmpty()) anhList = "default_place.jpg";
+                    if(mapLink == null) mapLink = "";
 
                     int idCity = rs.getInt("id_city");
 
-                    if(moTa != null) moTa = moTa.replace("\"", "\\\"").replace("\n", " ");
-
-                    // 2. Tính điểm trung bình
+                    // Tính điểm TB
                     String sqlRate = "SELECT AVG(rate_point) as diem_tb FROM Danhgia_diadiem WHERE id_dia_diem = ?";
                     PreparedStatement stmtRate = conn.prepareStatement(sqlRate);
                     stmtRate.setString(1, id);
@@ -57,10 +68,12 @@ public class ChiTietDiaDiem extends HttpServlet {
 
                     double diemTB = 0;
                     if (rsRate.next()) diemTB = rsRate.getDouble("diem_tb");
-                    DecimalFormat df = new DecimalFormat("#.0");
+
+                    DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+                    DecimalFormat df = new DecimalFormat("0.0", symbols);
                     String sao = df.format(diemTB);
 
-                    // 3. Kiểm tra yêu thích
+                    // Check yêu thích
                     boolean isFav = false;
                     if (username != null && !username.isEmpty() && !username.equals("null")) {
                         String sqlFav = "SELECT COUNT(*) FROM SoThich WHERE username = ? AND id_dia_diem = ?";
@@ -76,7 +89,10 @@ public class ChiTietDiaDiem extends HttpServlet {
                             "\"ten\": \"" + ten + "\"," +
                             "\"diachi\": \"" + diaChi + "\"," +
                             "\"mota\": \"" + moTa + "\"," +
-                            "\"loai\": \"" + loaiHinh + "\"," + // Trả về tên loại hình chuẩn
+                            "\"loai\": \"" + tenLoai + "\"," + // Dùng biến tenLoai
+                            "\"city_name\": \"" + tenTP + "\"," +
+                            "\"anh_list\": \"" + anhList + "\"," +
+                            "\"map_link\": \"" + mapLink + "\"," +
                             "\"id_city\": " + idCity + "," +
                             "\"sao\": \"" + sao + "\"," +
                             "\"is_fav\": " + isFav +

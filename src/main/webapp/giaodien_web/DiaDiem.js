@@ -1,180 +1,183 @@
-// Kiểm tra đăng nhập
-const currentUser = localStorage.getItem("currentUser");
-const currentFullName = localStorage.getItem("currentFullName");
-if (!currentUser) {
-    alert("Vui lòng đăng nhập!");
-    window.location.href = "login.html";
-} else {
-    document.getElementById('userHello').innerText = "Xin chào " + (currentFullName ? currentFullName : currentUser);
-}
-
-// Lấy ID địa điểm từ URL
 const params = new URLSearchParams(window.location.search);
 const idDiaDiem = params.get('id');
+const currentUser = localStorage.getItem("currentUser");
+const currentFullName = localStorage.getItem("currentFullName");
 
-if (!idDiaDiem) {
-    alert("Không xác định được địa điểm!");
-    window.location.href = "chonThanhPho.html";
+// Check User
+if (!currentUser) {
+    alert("Vui lòng đăng nhập!"); window.location.href = "login.html";
+} else {
+    if(document.getElementById('userHello'))
+        document.getElementById('userHello').innerText = "Xin chào " + (currentFullName || currentUser);
 }
-//Ngu
-// Gọi API lấy chi tiết
+
+// Check ID
+if (!idDiaDiem) {
+    alert("Lỗi ID!"); window.location.href = "chonThanhPho.html";
+}
+
+// 1. TẢI CHI TIẾT
 fetch('/SMcity/api/chi-tiet-dia-diem?id=' + idDiaDiem + '&user=' + currentUser)
     .then(res => res.json())
     .then(data => {
         if (data.status === "success") {
+            // Điền Text
             document.getElementById('ddTen').innerText = data.ten;
             document.getElementById('ddSao').innerText = data.sao;
             document.getElementById('ddLoai').innerText = data.loai;
             document.getElementById('ddDiaChi').innerText = data.diachi;
             document.getElementById('ddMoTa').innerText = data.mota;
-            initFavoriteButton(data.is_fav);
-            // Cấu hình nút Quay lại về đúng thành phố ID cũ
-            document.getElementById('btnBack').onclick = function() {
-                window.location.href = "thanhpho.html?id=" + data.id_city;
-            };
+
+            // Breadcrumb
+            document.getElementById('breadcrumb').innerText = `${data.city_name} / ${data.loai} / ${data.ten}`;
+
+            // Nút Back
+            document.getElementById('btnBack').onclick = () => window.location.href = "thanhpho.html?id=" + data.id_city;
+
+            // Map Embed
+            if(data.map_link && data.map_link.trim() !== "") {
+                document.getElementById('mapContainer').style.display = 'block';
+                document.getElementById('googleMapFrame').src = data.map_link;
+            }
+
+            // XỬ LÝ ẢNH (GALLERY)
+            let images = data.anh_list.trim().split(/\s+/);
+            if(images.length === 0 || images[0] === "") images = ['default_place.jpg'];
+
+            // Ảnh bìa mờ
+            document.getElementById('placeBgBlur').style.backgroundImage = `url('../images/${images[0]}')`;
+
+            // List ảnh nhỏ
+            const gallery = document.getElementById('galleryList');
+            gallery.innerHTML = "";
+            images.forEach(img => {
+                let imgTag = document.createElement('img');
+                imgTag.src = `../images/${img}`;
+                imgTag.className = 'gallery-item';
+                imgTag.onclick = () => window.open(imgTag.src, '_blank');
+                imgTag.onerror = () => { imgTag.src = '../images/default_place.jpg'; };
+                gallery.appendChild(imgTag);
+            });
+
+            // Button Yêu thích
+            updateFavoriteUI(data.is_fav);
         } else {
-            alert("Lỗi: " + data.message);
+            document.getElementById('ddTen').innerText = "Không tìm thấy dữ liệu";
         }
     })
-    .catch(err => console.log(err));
+    .catch(err => console.error(err));
 
-// ====================================================================================
-// -----------------------------TÍNH NĂNG MỚI: GỢI Ý & BÌNH LUẬN----------------------
-// ====================================================================================
-//1. Hàm tải gợi ý địa điểm
+// 2. NÚT YÊU THÍCH
+const btnFav = document.getElementById('btnFavorite');
+function updateFavoriteUI(isFav) {
+    if (isFav) {
+        btnFav.innerHTML = '<i class="fas fa-heart"></i> Đã thích';
+        btnFav.classList.add('active');
+    } else {
+        btnFav.innerHTML = '<i class="far fa-heart"></i> Thêm vào yêu thích';
+        btnFav.classList.remove('active');
+    }
+}
+btnFav.onclick = function() {
+    fetch('/SMcity/api/xu-ly-so-thich', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `username=${currentUser}&id_dia_diem=${idDiaDiem}`
+    }).then(res => res.json()).then(data => {
+        if (data.status === "success") updateFavoriteUI(data.action === "added");
+    });
+};
+
+// 3. GỢI Ý (CAROUSEL)
 function loadRecommendation() {
     fetch('/SMcity/api/lay-de-xuat?id=' + idDiaDiem)
         .then(res => res.json())
         .then(data => {
-            let div = document.getElementById('recommendList');
-            div.innerHTML = "";
-
-            if(data.length === 0) {
-                div.innerHTML = "<i>Chưa có gợi ý liên quan.</i>";
-                return;
-            }
+            let container = document.getElementById('recList');
+            container.innerHTML = "";
+            if(data.length === 0) { container.innerHTML = "<p style='padding:10px; color:#999'>Chưa có gợi ý.</p>"; return; }
 
             data.forEach(item => {
-                // Tạo link bấm vào là chuyển sang địa điểm đó
-                div.innerHTML += `
-                <div style="margin-bottom: 5px;">
-                    👉 <a href="DiaDiem.html?id=${item.id}" style="text-decoration: none; color: #007bff;">
-                        <b>${item.ten}</b>
-                    </a>
-                </div>
-            `;
+                let img = item.anh ? item.anh : 'default_place.jpg';
+                let html = `
+                <a href="DiaDiem.html?id=${item.id}" class="place-card">
+                    <div class="card-img-container">
+                        <img src="../images/${img}" class="card-img" onerror="this.src='../images/default_place.jpg'">
+                    </div>
+                    <div class="card-body">
+                        <h4 class="card-title">${item.ten}</h4>
+                        <div class="card-rating">★ Click xem chi tiết</div> 
+                    </div>
+                </a>`;
+                container.innerHTML += html;
             });
         });
 }
+loadRecommendation();
 
-// 2. Hàm tải danh sách bình luận
+// 4. BÌNH LUẬN
 function loadComments() {
     fetch('/SMcity/api/lay-binh-luan?id=' + idDiaDiem)
         .then(res => res.json())
         .then(data => {
             let div = document.getElementById('commentList');
             div.innerHTML = "";
-
-            if(data.length === 0) {
-                div.innerHTML = "<p>Chưa có đánh giá nào. Hãy là người đầu tiên!</p>";
-                return;
-            }
-
+            if(data.length === 0) { div.innerHTML = "<p style='font-style:italic; color:#999'>Chưa có đánh giá nào.</p>"; return; }
             data.forEach(item => {
                 div.innerHTML += `
                 <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
                     <b>${item.user}</b> <span style="color: orange;">(${item.rate} ⭐)</span>
                     <span style="font-size: 0.8em; color: gray; float: right;">${item.ngay}</span>
                     <p style="margin-top: 5px;">${item.comment}</p>
-                </div>
-            `;
+                </div>`;
             });
         });
 }
 
-// 3. Xử lý nút Gửi bình luận
-document.getElementById('btnSendComment').addEventListener('click', function() {
-    const rate = document.getElementById('cmtRate').value;
-    const comment = document.getElementById('cmtText').value;
+// --- XỬ LÝ GỬI BÌNH LUẬN (ĐÃ SỬA CHO SAO) ---
+document.getElementById('btnSendComment').onclick = function() {
+    // 1. Lấy sao từ Radio button (Thay vì select box cũ)
+    const checkedStar = document.querySelector('input[name="cmtRate"]:checked');
 
-    if(comment.trim() === "") {
-        alert("Bạn chưa viết nội dung đánh giá!");
-        return;
+    if (!checkedStar) {
+        alert("Vui lòng chọn số sao!"); return;
     }
+    const rate = checkedStar.value;
 
+    // 2. Lấy nội dung
+    const comment = document.getElementById('cmtText').value;
+    if(comment.trim() === "") { alert("Vui lòng nhập nội dung!"); return; }
+
+    // 3. Gửi
     fetch('/SMcity/api/gui-binh-luan', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: `username=${currentUser}&id_dia_diem=${idDiaDiem}&rate=${rate}&comment=${comment}`
-    })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === "success") {
-                alert(data.message);
-                document.getElementById('cmtText').value = ""; // Xóa ô nhập
-                loadComments(); // Tải lại danh sách comment ngay lập tức
-            } else {
-                alert("Lỗi: " + data.message);
-            }
-        });
-});
+    }).then(res => res.json()).then(data => {
+        if(data.status === "success") {
+            alert("Đánh giá thành công!");
+            document.getElementById('cmtText').value="";
+            checkedStar.checked = false; // Reset sao
+            loadComments();
+        }
+        else alert(data.message);
+    });
+};
+loadComments();
 
-// ==================================================================
-// ------------------------LOGIC SỞ THÍCH---------------------------
-// ==================================================================
-function updateFavoriteUI(isFav) {
-    const btn = document.getElementById('btnFavorite');
-    if (isFav) {
-        btn.innerHTML = '✅ Đã thêm vào Sở thích';
-        btn.style.backgroundColor = '#d4edda';
-        btn.style.color = '#155724';
-    } else {
-        btn.innerHTML = '🤍 Thêm vào Sở thích';
-        btn.style.backgroundColor = '#f8d7da';
-        btn.style.color = '#721c24';
+function logout() {
+    if(confirm("Đăng xuất?")) {
+        localStorage.clear();
+        window.location.href="login.html";
     }
 }
 
-document.getElementById('btnFavorite').addEventListener('click', function() {
-    fetch('/SMcity/api/xu-ly-so-thich', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `username=${currentUser}&id_dia_diem=${idDiaDiem}`
-    })
-        .then(res => res.json())
-        .then(data => {
-            if (data.status === "success") {
-                // Nếu action là 'added' -> true, 'removed' -> false
-                const isAdded = (data.action === "added");
-                updateFavoriteUI(isAdded);
-            }
-        });
-});
+// --- CÁC HÀM GLOBAL (ĐỂ HTML GỌI TRỰC TIẾP) ---
+function scrollGallery(amount) {
+    const gallery = document.getElementById('galleryList');
+    if(gallery) gallery.scrollBy({ left: amount, behavior: 'smooth' });
+}
 
-// GỌI API CHI TIẾT (SỬA ĐOẠN NÀY)
-// Thêm tham số &user=... vào URL
-fetch('/SMcity/api/chi-tiet-dia-diem?id=' + idDiaDiem + '&user=' + currentUser)
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === "success") {
-            document.getElementById('ddTen').innerText = data.ten;
-            document.getElementById('ddSao').innerText = data.sao;
-            document.getElementById('ddLoai').innerText = data.loai;
-            document.getElementById('ddDiaChi').innerText = data.diachi;
-            document.getElementById('ddMoTa').innerText = data.mota;
-
-            // QUAN TRỌNG: Cập nhật nút theo trạng thái thật từ Database
-            updateFavoriteUI(data.is_fav);
-
-            document.getElementById('btnBack').onclick = function() {
-                window.location.href = "thanhpho.html?id=" + data.id_city;
-            };
-        } else {
-            alert("Lỗi: " + data.message);
-        }
-    })
-    .catch(err => console.log(err));
-
-// GỌI CÁC HÀM NÀY KHI VÀO TRANG
-loadRecommendation();
-loadComments();
+function scrollRec(id, amount) {
+    const el = document.getElementById(id);
+    if(el) el.scrollBy({ left: amount, behavior: 'smooth' });
+}
