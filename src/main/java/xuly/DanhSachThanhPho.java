@@ -35,11 +35,21 @@ public class DanhSachThanhPho extends HttpServlet {
                     if (!isFirst) {
                         jsonResult.append(","); // Thêm dấu phẩy giữa các phần tử
                     }
-                    String ten = rs.getString("ten_thanh_pho");
                     int id = rs.getInt("id");
+                    String ten = rs.getString("ten_thanh_pho");
 
-                    // Tạo JSON object thủ công: {"id": 1, "ten": "Hà Nội"}
-                    jsonResult.append("{\"id\":").append(id).append(", \"ten\":\"").append(ten).append("\"}");
+                    // --- MỚI: Lấy ảnh bìa ---
+                    String anh = rs.getString("anh_bia");
+                    // Xử lý nếu trong database chưa có ảnh (null) thì dùng ảnh mặc định
+                    if(anh == null || anh.isEmpty()) {
+                        anh = "default.jpg";
+                    }
+
+                    // Tạo JSON object thủ công: {"id": 1, "ten": "Hà Nội", "anh": "hanoi.jpg"}
+                    jsonResult.append("{\"id\":").append(id)
+                            .append(", \"ten\":\"").append(ten).append("\"")
+                            .append(", \"anh\":\"").append(anh).append("\"}");
+
                     isFirst = false;
                 }
                 conn.close();

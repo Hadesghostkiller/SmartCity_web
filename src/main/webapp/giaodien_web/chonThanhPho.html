@@ -2,21 +2,32 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
+    <title>Chọn Điểm Đến - SMcity</title>
     <link rel="icon" type="image/png" href="../images/smcity_logo.png">
-    <title>Chọn Thành Phố - SMcity</title>
+    <link rel="stylesheet" href="../styles.css">
 </head>
-<body>
-<h2>Chào mừng! Hãy chọn thành phố bạn quan tâm</h2>
+<body class="city-selection-body" id="bgBody">
 
-<label>Danh sách thành phố:</label>
-<select id="citySelect">
-    <option value="">-- Đang tải dữ liệu... --</option>
-</select>
+<div class="welcome-header">
+    <h1 class="welcome-text">Xin chào quý khách!</h1>
+    <p style="color: #ddd; font-family: 'Ubuntu', sans-serif; font-size: 18px;">
+        Chào mừng, <span id="userDisplay" style="font-weight: bold; color: yellow;">Bạn</span>
+    </p>
+</div>
 
-<button id="btnGo">Đi đến</button>
+<div class="city-display-area">
 
-<br><br>
-<a href="login.html">Đăng xuất</a>
+    <div class="nav-controls">
+        <button class="nav-btn" onclick="prevCity()">&#10094;</button> <h2 id="cityNameDisplay" class="city-name-big">LOADING...</h2>
+
+        <button class="nav-btn" onclick="nextCity()">&#10095;</button> </div>
+
+    <button id="btnGo" class="btn-go">KHÁM PHÁ NGAY</button>
+</div>
+
+<div class="logout-area">
+    <a href="#" onclick="logout()" class="btn-logout">Đăng xuất hệ thống</a>
+</div>
 
 <script src="chonThanhPho.js"></script>
 </body>

@@ -3,61 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <title>Thông tin Thành Phố</title>
+    <link rel="icon" type="image/png" href="../images/smcity_logo.png">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-<label>Chuyển đến thành phố khác:</label>
-<select id="citySelect">
-    <option value="">-- Chọn thành phố --</option>
-</select>
-<button id="btnSwitch">Đi</button>
-<span style="float: right;">
-    <span id="userHello"></span> |
-    <a href="profile.html">Trang cá nhân</a> | <a href="login.html">Đăng xuất</a>
-</span>
 
-<hr>
-
-<div id="content">
-    <h1 id="tenTP">Đang tải tên...</h1>
-
-    <h3>Đánh giá: <span id="soSao" style="color: orange; font-weight: bold;">0.0</span> / 5.0 ⭐</h3>
-    <div id="ratingArea" style="margin-top: 10px; border: 1px dashed #ccc; padding: 10px; width: fit-content;">
-        <b>Tôi cũng muốn đánh giá:</b><br>
-        <select id="myRate">
-            <option value="5">5 sao - Tuyệt vời</option>
-            <option value="4">4 sao - Tốt</option>
-            <option value="3">3 sao - Bình thường</option>
-            <option value="2">2 sao - Tệ</option>
-            <option value="1">1 sao - Quá tệ</option>
-        </select>
-        <button id="btnRate">Gửi đánh giá</button>
-    </div>
-    <p><b>Mô tả:</b></p>
-    <p id="moTaTP">Đang tải mô tả...</p>
-
-    <hr>
-
-    <h3>Khám phá địa điểm:</h3>
-    <div class="tabs">
-        <button onclick="changeType(0)" id="btnType0">Tất cả</button>
-        <button onclick="changeType(1)" id="btnType1">Nhà hàng</button>
-        <button onclick="changeType(2)" id="btnType2">Khách sạn</button>
-        <button onclick="changeType(3)" id="btnType3">Vui chơi</button>
-        <button onclick="changeType(4)" id="btnType4">Du lịch</button>
-        <button onclick="changeType(5)" id="btnType5">Mua sắm</button>
-    </div>
-
-    <br>
-    <div id="listDiaDiem">
-        <p>Đang tải dữ liệu...</p>
-    </div>
-
+<div class="top-bar">
     <div>
-        <button onclick="changePage(-1)" id="btnPrev">Trang trước</button>
-        <span id="pageInfo">Trang 1 / 1</span>
-        <button onclick="changePage(1)" id="btnNext">Trang sau</button>
+        <img src="../images/smcity_logo.png" style="height: 30px; vertical-align: middle; margin-right: 10px;">
+
+        <select id="citySelect" class="select-city-modern">
+            <option value="">-- Khám phá nơi khác --</option>
+        </select>
+        <button id="btnSwitch" class="btn-switch-modern">Đi</button>
     </div>
 
-    <script src="thanhpho.js"></script>
+    <div class="top-right-menu">
+        <span id="userHello" style="font-weight: bold; color: #555;">Xin chào</span> |
+        <a href="profile.html" id="linkProfile" style="color:#007bff;">Trang cá nhân</a> |
+        <a href="#" onclick="logout()" style="color: red;">Đăng xuất</a>
+    </div>
+</div>
+
+<div class="city-banner" id="bannerBg">
+    <div class="banner-overlay"></div>
+
+    <div class="banner-content">
+        <h1 id="tenTP" class="banner-city-name">LOADING...</h1>
+
+        <p id="moTaTP" class="banner-desc-text">Đang tải mô tả...</p>
+
+        <div class="banner-rating">
+            <span id="soSao">0.0</span> / 5.0 ⭐
+        </div>
+    </div>
+</div>
+
+<div class="city-content-container">
+
+    <div class="left-column">
+
+        <div class="rating-wrapper">
+            <h4>Đánh giá trải nghiệm của bạn</h4>
+
+            <div class="star-widget">
+                <input type="radio" name="rate" id="rate-5" value="5">
+                <label for="rate-5" class="fas fa-star"></label>
+
+                <input type="radio" name="rate" id="rate-4" value="4">
+                <label for="rate-4" class="fas fa-star"></label>
+
+                <input type="radio" name="rate" id="rate-3" value="3">
+                <label for="rate-3" class="fas fa-star"></label>
+
+                <input type="radio" name="rate" id="rate-2" value="2">
+                <label for="rate-2" class="fas fa-star"></label>
+
+                <input type="radio" name="rate" id="rate-1" value="1">
+                <label for="rate-1" class="fas fa-star"></label>
+            </div>
+
+            <div style="margin-top: 10px;">
+                <button onclick="submitRating()" style="background: #28a745; color: white; border: none; padding: 10px 25px; cursor: pointer; border-radius: 20px; font-weight: bold;">
+                    Gửi Đánh Giá
+                </button>
+            </div>
+        </div>
+
+        <hr>
+    </div>
+
+    <div class="right-column">
+        <h3>Khám phá địa điểm hấp dẫn</h3>
+        <div class="category-tabs">
+            <button class="tab-btn active" onclick="changeType(0, this)">Tất cả</button>
+            <button class="tab-btn" onclick="changeType(1, this)">Nhà hàng</button>
+            <button class="tab-btn" onclick="changeType(2, this)">Khách sạn</button>
+            <button class="tab-btn" onclick="changeType(3, this)">Vui chơi</button>
+            <button class="tab-btn" onclick="changeType(4, this)">Du lịch</button>
+            <button class="tab-btn" onclick="changeType(5, this)">Mua sắm</button>
+        </div>
+
+        <div id="listDiaDiem">
+            <p>Đang tải dữ liệu...</p>
+        </div>
+
+        <div style="margin-top: 20px; text-align: center;">
+            <button onclick="changePage(-1)" id="btnPrev">Trang trước</button>
+            <span id="pageInfo" style="margin: 0 10px;">Trang 1 / 1</span>
+            <button onclick="changePage(1)" id="btnNext">Trang sau</button>
+        </div>
+    </div>
+</div>
+
+<script src="thanhpho.js"></script>
 </body>
 </html>

@@ -28,16 +28,27 @@ public class ChiTietThanhPho extends HttpServlet {
 
         if (conn != null && idCity != null) {
             try {
-                // Query 1: Lấy thông tin cơ bản
-                String sqlInfo = "SELECT ten_thanh_pho, mo_ta FROM ThanhPho WHERE id = ?";
+                // Query 1: Lấy thông tin cơ bản + BANNER
+                // Sửa: Thêm cột banner vào câu SELECT
+                String sqlInfo = "SELECT ten_thanh_pho, mo_ta, banner FROM ThanhPho WHERE id = ?";
                 PreparedStatement stmtInfo = conn.prepareStatement(sqlInfo);
                 stmtInfo.setString(1, idCity);
                 ResultSet rsInfo = stmtInfo.executeQuery();
 
                 if (rsInfo.next()) {
                     String ten = rsInfo.getString("ten_thanh_pho");
+
+                    // Xử lý mô tả (tránh lỗi JSON khi có dấu ngoặc kép hoặc xuống dòng)
                     String moTa = rsInfo.getString("mo_ta");
-                    if(moTa == null) moTa = "Chưa có mô tả.";
+                    if(moTa == null) {
+                        moTa = "Chưa có mô tả.";
+                    } else {
+                        moTa = moTa.replace("\"", "\\\"").replace("\n", " ");
+                    }
+
+                    // Lấy Banner
+                    String banner = rsInfo.getString("banner");
+                    if(banner == null || banner.isEmpty()) banner = "default_banner.jpg";
 
                     // Query 2: Tính trung bình cộng số sao
                     String sqlRate = "SELECT AVG(rate_city) as diem_tb FROM Danhgia_city WHERE id_city = ?";
@@ -54,9 +65,14 @@ public class ChiTietThanhPho extends HttpServlet {
                     DecimalFormat df = new DecimalFormat("#.0");
                     String diemDep = df.format(diemTB);
 
-                    // Tạo JSON
-                    // Lưu ý: diemDep là chuỗi, nên để trong ngoặc kép
-                    jsonResult = "{\"status\": \"success\", \"ten\": \"" + ten + "\", \"mota\": \"" + moTa + "\", \"sao\": \"" + diemDep + "\"}";
+                    // Tạo JSON - Sửa: Thêm trường "banner" vào chuỗi JSON
+                    jsonResult = "{" +
+                            "\"status\": \"success\", " +
+                            "\"ten\": \"" + ten + "\", " +
+                            "\"mota\": \"" + moTa + "\", " +
+                            "\"banner\": \"" + banner + "\", " +  // <-- Đã thêm ở đây
+                            "\"sao\": \"" + diemDep + "\"" +
+                            "}";
                 } else {
                     jsonResult = "{\"status\": \"fail\", \"message\": \"Không tìm thấy thành phố\"}";
                 }
