@@ -21,65 +21,53 @@ public class ChiTietThanhPho extends HttpServlet {
         resp.setCharacterEncoding("UTF-8");
         PrintWriter out = resp.getWriter();
 
-        String idCity = req.getParameter("id"); // Lấy ID từ URL
-
+        String idCity = req.getParameter("id");
         Connection conn = KetNoiCSDL.layKetNoi();
         String jsonResult = "{}";
 
         if (conn != null && idCity != null) {
             try {
-                // Query 1: Lấy thông tin cơ bản + BANNER
-                // Sửa: Thêm cột banner vào câu SELECT
-                String sqlInfo = "SELECT ten_thanh_pho, mo_ta, banner FROM ThanhPho WHERE id = ?";
+                // Thêm map_link vào SQL
+                String sqlInfo = "SELECT ten_thanh_pho, mo_ta, banner, map_link FROM ThanhPho WHERE id = ?";
                 PreparedStatement stmtInfo = conn.prepareStatement(sqlInfo);
                 stmtInfo.setString(1, idCity);
                 ResultSet rsInfo = stmtInfo.executeQuery();
 
                 if (rsInfo.next()) {
                     String ten = rsInfo.getString("ten_thanh_pho");
-
-                    // Xử lý mô tả (tránh lỗi JSON khi có dấu ngoặc kép hoặc xuống dòng)
                     String moTa = rsInfo.getString("mo_ta");
-                    if(moTa == null) {
-                        moTa = "Chưa có mô tả.";
-                    } else {
-                        moTa = moTa.replace("\"", "\\\"").replace("\n", " ");
-                    }
+                    if(moTa == null) moTa = "Chưa có mô tả.";
+                    else moTa = moTa.replace("\"", "\\\"").replace("\n", " ");
 
-                    // Lấy Banner
                     String banner = rsInfo.getString("banner");
                     if(banner == null || banner.isEmpty()) banner = "default_banner.jpg";
 
-                    // Query 2: Tính trung bình cộng số sao
+                    String mapLink = rsInfo.getString("map_link");
+                    if(mapLink == null) mapLink = "";
+
                     String sqlRate = "SELECT AVG(rate_city) as diem_tb FROM Danhgia_city WHERE id_city = ?";
                     PreparedStatement stmtRate = conn.prepareStatement(sqlRate);
                     stmtRate.setString(1, idCity);
                     ResultSet rsRate = stmtRate.executeQuery();
 
                     double diemTB = 0;
-                    if (rsRate.next()) {
-                        diemTB = rsRate.getDouble("diem_tb");
-                    }
-
-                    // Làm tròn 1 chữ số thập phân (Ví dụ 4.6666 -> 4.7)
+                    if (rsRate.next()) diemTB = rsRate.getDouble("diem_tb");
                     DecimalFormat df = new DecimalFormat("#.0");
                     String diemDep = df.format(diemTB);
 
-                    // Tạo JSON - Sửa: Thêm trường "banner" vào chuỗi JSON
                     jsonResult = "{" +
                             "\"status\": \"success\", " +
                             "\"ten\": \"" + ten + "\", " +
                             "\"mota\": \"" + moTa + "\", " +
-                            "\"banner\": \"" + banner + "\", " +  // <-- Đã thêm ở đây
+                            "\"banner\": \"" + banner + "\", " +
+                            "\"map_link\": \"" + mapLink + "\", " +
                             "\"sao\": \"" + diemDep + "\"" +
                             "}";
                 } else {
                     jsonResult = "{\"status\": \"fail\", \"message\": \"Không tìm thấy thành phố\"}";
                 }
                 conn.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            } catch (Exception e) { e.printStackTrace(); }
         }
         out.print(jsonResult);
         out.flush();

@@ -12,6 +12,9 @@ import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 @WebServlet("/api/lay-dia-diem")
 public class LayDiaDiem extends HttpServlet {
@@ -23,86 +26,85 @@ public class LayDiaDiem extends HttpServlet {
         String idCity = req.getParameter("id_city");
         String typeId = req.getParameter("type");
         String username = req.getParameter("user");
-
-        int page = 1;
-        try {
-            if(req.getParameter("page") != null) page = Integer.parseInt(req.getParameter("page"));
-        } catch (Exception e) { page = 1; }
-
-        int limit = 10;
-        int offset = (page - 1) * limit;
+        String sort = req.getParameter("sort");
 
         Connection conn = KetNoiCSDL.layKetNoi();
         StringBuilder jsonBody = new StringBuilder("[");
-        int totalPages = 0;
 
         if (conn != null) {
             try {
-                // 1. Đếm tổng số trang
-                String sqlCount = "SELECT COUNT(*) FROM DiaDiem WHERE id_city = ?";
-                if (typeId != null && !typeId.equals("0")) {
-                    sqlCount += " AND id_loai_hinh = ?"; // Sửa thành id_loai_hinh
-                }
-                PreparedStatement stmtCount = conn.prepareStatement(sqlCount);
-                stmtCount.setString(1, idCity);
-                if (typeId != null && !typeId.equals("0")) {
-                    stmtCount.setString(2, typeId);
-                }
-                ResultSet rsCount = stmtCount.executeQuery();
-                if (rsCount.next()) {
-                    int total = rsCount.getInt(1);
-                    totalPages = (int) Math.ceil((double) total / limit);
-                }
-
-                // 2. Lấy dữ liệu (SỬA ĐOẠN NÀY: JOIN VỚI BẢNG LOAIHINH)
-                String sqlData = "SELECT d.*, l.ten_loai_hinh, IF(s.username IS NOT NULL, 'true', 'false') as da_thich " +
+                String sql = "SELECT d.id, d.ten_dia_diem, d.dia_chi, d.anh_dd, d.id_loai_hinh, " +
+                        "COALESCE(AVG(dg.rate_point), 0) as diem_tb, " +
+                        "COUNT(dg.id) as luot_dg, " +
+                        "MAX(CASE WHEN s.username = ? THEN 1 ELSE 0 END) as da_thich " +
                         "FROM DiaDiem d " +
-                        "LEFT JOIN LoaiHinh l ON d.id_loai_hinh = l.id " + // JOIN để lấy tên loại
-                        "LEFT JOIN SoThich s ON d.id = s.id_dia_diem AND s.username = ? " +
-                        "WHERE d.id_city = ?";
+                        "LEFT JOIN Danhgia_diadiem dg ON d.id = dg.id_dia_diem " +
+                        "LEFT JOIN SoThich s ON d.id = s.id_dia_diem " +
+                        "WHERE d.id_city = ? ";
 
-                if (typeId != null && !typeId.equals("0")) {
-                    sqlData += " AND d.id_loai_hinh = ?";
+                if (typeId != null && !typeId.equals("0") && !typeId.isEmpty()) {
+                    sql += " AND d.id_loai_hinh = ? ";
                 }
-                sqlData += " LIMIT ? OFFSET ?";
 
-                PreparedStatement stmtData = conn.prepareStatement(sqlData);
-                int paramIndex = 1;
-                stmtData.setString(paramIndex++, username);
-                stmtData.setString(paramIndex++, idCity);
+                sql += " GROUP BY d.id, d.ten_dia_diem, d.dia_chi, d.anh_dd, d.id_loai_hinh ";
 
-                if (typeId != null && !typeId.equals("0")) {
-                    stmtData.setString(paramIndex++, typeId);
+                if ("hot".equals(sort)) {
+                    sql += " ORDER BY diem_tb DESC LIMIT 8";
+                } else {
+                    sql += " ORDER BY d.id DESC LIMIT 8";
                 }
-                stmtData.setInt(paramIndex++, limit);
-                stmtData.setInt(paramIndex, offset);
 
-                ResultSet rs = stmtData.executeQuery();
+                PreparedStatement stmt = conn.prepareStatement(sql);
+                stmt.setString(1, (username != null && !username.equals("null")) ? username : "");
+                stmt.setString(2, idCity);
+
+                if (typeId != null && !typeId.equals("0") && !typeId.isEmpty()) {
+                    stmt.setString(3, typeId);
+                }
+
+                ResultSet rs = stmt.executeQuery();
                 boolean isFirst = true;
+
+                // --- SỬA LỖI TẠI ĐÂY: Đổi "#.0" thành "0.0" ---
+                // "0.0" đảm bảo số 0 luôn hiển thị (0.0 thay vì .0)
+                DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.US);
+                DecimalFormat df = new DecimalFormat("0.0", symbols);
 
                 while (rs.next()) {
                     if (!isFirst) jsonBody.append(",");
 
-                    boolean isFav = Boolean.parseBoolean(rs.getString("da_thich"));
+                    String anh = rs.getString("anh_dd");
+                    if(anh == null || anh.isEmpty()) anh = "default_place.jpg";
 
-                    // Lấy tên loại hình từ bảng LoaiHinh (l.ten_loai_hinh)
-                    String tenLoai = rs.getString("ten_loai_hinh");
-                    if(tenLoai == null) tenLoai = "Khác"; // Dự phòng nếu null
+                    String ten = rs.getString("ten_dia_diem");
+                    if(ten != null) ten = ten.replace("\"", "\\\"").replace("\n", " ");
+
+                    String diaChi = rs.getString("dia_chi");
+                    if(diaChi != null) diaChi = diaChi.replace("\"", "\\\"").replace("\n", " ");
+
+                    double diemRaw = rs.getDouble("diem_tb");
+                    String soSao = df.format(diemRaw);
 
                     jsonBody.append("{")
                             .append("\"id\":").append(rs.getInt("id")).append(",")
-                            .append("\"ten\":\"").append(rs.getString("ten_dia_diem")).append("\",")
-                            .append("\"diachi\":\"").append(rs.getString("dia_chi")).append("\",")
-                            .append("\"loai\":\"").append(tenLoai).append("\",") // Gán tên loại chuẩn vào JSON
-                            .append("\"is_fav\":").append(isFav)
+                            .append("\"ten\":\"").append(ten).append("\",")
+                            .append("\"diachi\":\"").append(diaChi).append("\",")
+                            .append("\"anh\":\"").append(anh).append("\",")
+                            .append("\"sao\":").append(soSao).append(",")
+                            .append("\"luot_dg\":").append(rs.getInt("luot_dg")).append(",")
+                            .append("\"is_fav\":").append(rs.getInt("da_thich") == 1)
                             .append("}");
                     isFirst = false;
                 }
                 conn.close();
-            } catch (Exception e) { e.printStackTrace(); }
+            } catch (Exception e) {
+                e.printStackTrace();
+                out.print("{\"status\":\"error\", \"message\":\"Lỗi SQL: " + e.getMessage().replace("\"", "'") + "\"}");
+                return;
+            }
         }
         jsonBody.append("]");
-        out.print("{\"status\":\"success\", \"total_pages\":" + totalPages + ", \"data\":" + jsonBody.toString() + "}");
+        out.print("{\"status\":\"success\", \"data\":" + jsonBody.toString() + "}");
         out.flush();
     }
 }
