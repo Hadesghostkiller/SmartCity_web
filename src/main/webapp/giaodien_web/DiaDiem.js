@@ -16,12 +16,12 @@ if (!idDiaDiem) {
     alert("Lỗi ID!"); window.location.href = "chonThanhPho.html";
 }
 
-// 1. TẢI CHI TIẾT
+// 1. TẢI CHI TIẾT ĐỊA ĐIỂM
 fetch('/SMcity/api/chi-tiet-dia-diem?id=' + idDiaDiem + '&user=' + currentUser)
     .then(res => res.json())
     .then(data => {
         if (data.status === "success") {
-            // Điền Text
+            // Điền thông tin
             document.getElementById('ddTen').innerText = data.ten;
             document.getElementById('ddSao').innerText = data.sao;
             document.getElementById('ddLoai').innerText = data.loai;
@@ -40,11 +40,14 @@ fetch('/SMcity/api/chi-tiet-dia-diem?id=' + idDiaDiem + '&user=' + currentUser)
                 document.getElementById('googleMapFrame').src = data.map_link;
             }
 
-            // XỬ LÝ ẢNH (GALLERY)
-            let images = data.anh_list.trim().split(/\s+/);
+            // XỬ LÝ ẢNH (GALLERY & BANNER)
+            let images = [];
+            if (data.anh_list && data.anh_list.trim() !== "") {
+                images = data.anh_list.trim().split(/\s+/);
+            }
             if(images.length === 0 || images[0] === "") images = ['default_place.jpg'];
 
-            // Ảnh bìa mờ
+            // Ảnh nền mờ (Lấy ảnh đầu tiên)
             document.getElementById('placeBgBlur').style.backgroundImage = `url('../images/${images[0]}')`;
 
             // List ảnh nhỏ
@@ -88,20 +91,28 @@ btnFav.onclick = function() {
     });
 };
 
-// 3. GỢI Ý (CAROUSEL) - ĐÃ SỬA LỖI ẢNH & SAO
+// 3. GỢI Ý (CAROUSEL) - ĐÃ SỬA THEO LOGIC THANHPHO.JS
 function loadRecommendation() {
     fetch('/SMcity/api/lay-de-xuat?id=' + idDiaDiem)
         .then(res => res.json())
         .then(data => {
             let container = document.getElementById('recList');
             container.innerHTML = "";
-            if(data.length === 0) { container.innerHTML = "<p style='padding:10px; color:#999'>Chưa có gợi ý.</p>"; return; }
+            if(data.length === 0) {
+                container.innerHTML = "<p style='padding:10px; color:#999'>Chưa có gợi ý.</p>";
+                return;
+            }
 
             data.forEach(item => {
-                // --- FIX LỖI ẢNH: Cắt chuỗi lấy ảnh đầu tiên ---
+                // --- FIX LỖI ẢNH ---
                 let img = 'default_place.jpg';
-                if (item.anh && item.anh.trim() !== "") {
-                    img = item.anh.trim().split(/\s+/)[0];
+
+                // Ở API này tên biến là 'anh_dd'
+                let rawImg = item.anh_dd;
+
+                if (rawImg && rawImg.trim() !== "") {
+                    // Cắt chuỗi lấy ảnh đầu tiên (giống thanhpho.js)
+                    img = rawImg.trim().split(/\s+/)[0];
                 }
 
                 let html = `
@@ -168,6 +179,7 @@ document.getElementById('btnSendComment').onclick = function() {
 };
 loadComments();
 
+// --- CÁC HÀM HỖ TRỢ ---
 function logout() {
     if(confirm("Đăng xuất?")) {
         localStorage.clear();
@@ -175,7 +187,6 @@ function logout() {
     }
 }
 
-// --- CÁC HÀM GLOBAL (ĐỂ HTML GỌI TRỰC TIẾP) ---
 function scrollGallery(amount) {
     const gallery = document.getElementById('galleryList');
     if(gallery) gallery.scrollBy({ left: amount, behavior: 'smooth' });
