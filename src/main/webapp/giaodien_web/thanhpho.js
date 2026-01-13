@@ -3,11 +3,13 @@ const currentId = urlParams.get('id');
 const currentFullName = localStorage.getItem("currentFullName");
 const currentUser = localStorage.getItem("currentUser");
 
+// 1. Hiển thị lời chào
 if(currentUser && currentFullName) {
     document.getElementById('userHello').innerText = "Xin chào, " + currentFullName;
     document.getElementById('linkProfile').innerText = currentFullName;
 }
 
+// 2. Hàm đăng xuất
 function logout() {
     if(confirm("Đăng xuất khỏi hệ thống?")) {
         localStorage.removeItem("currentUser");
@@ -17,6 +19,7 @@ function logout() {
     }
 }
 
+// 3. Main Load
 window.onload = function() {
     if (!currentId) {
         alert("Chưa chọn thành phố!");
@@ -24,7 +27,7 @@ window.onload = function() {
         return;
     }
 
-    // A. Load Select Box
+    // A. Load Select Box (Danh sách thành phố)
     fetch('/SMcity/api/danh-sach-thanh-pho')
         .then(res => res.json())
         .then(data => {
@@ -38,7 +41,7 @@ window.onload = function() {
             });
         });
 
-    // B. Load Chi Tiết & MAP
+    // B. Load Chi Tiết Thành Phố & Map
     fetch('/SMcity/api/chi-tiet-thanh-pho?id=' + currentId)
         .then(res => res.json())
         .then(data => {
@@ -46,8 +49,13 @@ window.onload = function() {
                 document.getElementById('tenTP').innerText = data.ten;
                 document.getElementById('moTaTP').innerText = data.mota;
                 document.getElementById('soSao').innerText = data.sao;
-                document.getElementById('bannerBg').style.backgroundImage = `url('../images/${data.banner}')`;
 
+                // Banner
+                if(data.banner) {
+                    document.getElementById('bannerBg').style.backgroundImage = `url('../images/${data.banner}')`;
+                }
+
+                // Map Embed
                 if(data.map_link && data.map_link !== "") {
                     document.getElementById('cityMapBox').style.display = "block";
                     document.getElementById('cityMapFrame').src = data.map_link;
@@ -66,11 +74,12 @@ window.onload = function() {
     createSection('section-5', 'list-type-5', 5, 'new', '🛍️', 'Cửa hàng mua sắm');
 };
 
-// Hàm tạo HTML Section + Carousel
+// 4. Hàm tạo HTML Section + Carousel
 function createSection(wrapperId, listId, typeId, sortMode, icon, title) {
     const wrapper = document.getElementById(wrapperId);
     if (!wrapper) return;
 
+    // Vẽ khung Section
     wrapper.innerHTML = `
         <div class="section-header">
             <div style="display:flex; align-items:center;">
@@ -90,20 +99,30 @@ function createSection(wrapperId, listId, typeId, sortMode, icon, title) {
         </div>
     `;
 
+    // Gọi API lấy danh sách địa điểm
     fetch(`/SMcity/api/lay-dia-diem?id_city=${currentId}&type=${typeId}&sort=${sortMode}&user=${currentUser}`)
         .then(res => res.json())
         .then(result => {
             const container = document.getElementById(listId);
             container.innerHTML = "";
+
             if (result.data.length === 0) {
                 container.innerHTML = "<p style='color:#999; margin-left:10px;'>Chưa có địa điểm.</p>";
                 return;
             }
+
             result.data.forEach(item => {
                 let shortAddr = item.diachi.split(',').slice(0, 2).join(', ');
                 let heartHtml = item.is_fav ? `<div class="card-heart"><i class="fas fa-heart"></i></div>` : '';
 
-                // --- XỬ LÝ HIỂN THỊ ĐÁNH GIÁ ---
+                // --- FIX LỖI ẢNH: Cắt lấy ảnh đầu tiên ---
+                let firstImg = 'default_place.jpg';
+                if (item.anh && item.anh.trim() !== "") {
+                    // Nếu có nhiều ảnh (ngăn cách bởi dấu cách), lấy cái đầu tiên
+                    firstImg = item.anh.split(' ')[0];
+                }
+
+                // Xử lý hiển thị sao đánh giá
                 let ratingHtml = '';
                 if (item.luot_dg === 0) {
                     ratingHtml = `<span style="font-size: 13px; color: #999; font-style: italic;">Chưa có đánh giá</span>`;
@@ -118,7 +137,7 @@ function createSection(wrapperId, listId, typeId, sortMode, icon, title) {
                 let html = `
                 <a href="DiaDiem.html?id=${item.id}" class="place-card">
                     <div class="card-img-container">
-                        <img src="../images/${item.anh}" class="card-img" onerror="this.src='../images/default_place.jpg'">
+                        <img src="../images/${firstImg}" class="card-img" onerror="this.src='../images/default_place.jpg'">
                         ${heartHtml}
                     </div>
                     <div class="card-body">
@@ -126,7 +145,9 @@ function createSection(wrapperId, listId, typeId, sortMode, icon, title) {
                         <div class="card-rating">
                             ${ratingHtml}
                         </div>
-                        <div class="card-address"><i class="fas fa-map-marker-alt"></i> ${shortAddr}</div>
+                        <div class="card-address">
+                            <i class="fas fa-map-marker-alt"></i> ${shortAddr}
+                        </div>
                     </div>
                 </a>`;
                 container.innerHTML += html;
@@ -134,6 +155,7 @@ function createSection(wrapperId, listId, typeId, sortMode, icon, title) {
         });
 }
 
+// 5. Các hàm hỗ trợ Carousel
 function scrollCarousel(id, amount) {
     document.getElementById(id).scrollBy({ left: amount, behavior: 'smooth' });
 }
@@ -153,11 +175,13 @@ function toggleView(id, btn) {
     }
 }
 
+// 6. Xử lý nút Chuyển thành phố
 document.getElementById('btnSwitch').addEventListener('click', function() {
     let newId = document.getElementById('citySelect').value;
     if (newId) window.location.href = "thanhpho.html?id=" + newId;
 });
 
+// 7. Xử lý đánh giá thành phố
 function submitRating() {
     if (!currentUser) {
         alert("Vui lòng đăng nhập lại!"); window.location.href = "login.html"; return;

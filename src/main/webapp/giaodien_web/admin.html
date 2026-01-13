@@ -9,26 +9,25 @@
         .sidebar { width: 200px; background: #f4f4f4; border-right: 1px solid #ccc; padding: 20px; height: 100vh; box-sizing: border-box; }
         .content { flex: 1; padding: 20px; overflow-y: auto; }
 
-        /* CSS Modal nhỏ gọn lại */
+        /* Modal */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; }
         .modal-box {
             background: white;
-            width: 350px; /* Thu nhỏ chiều rộng */
-            margin: 50px auto;
-            padding: 20px;
+            width: 600px; /* Rộng hơn để chứa preview ảnh */
+            margin: 30px auto;
+            padding: 25px;
             border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            max-height: 90vh;
+            overflow-y: auto;
         }
-        input, select, textarea { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; }
+        input, select, textarea { width: 100%; padding: 8px; margin-bottom: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
 
-        /* CSS Bảng */
+        /* Table */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-
-        /* Thu nhỏ cột hành động */
-        th:last-child, td:last-child { width: 80px; text-align: center; }
-
-        button { cursor: pointer; padding: 5px 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: middle; }
+        th:last-child, td:last-child { width: 100px; text-align: center; }
+        button { cursor: pointer; padding: 6px 12px; }
         .btn-action { margin: 0 2px; }
     </style>
 </head>
@@ -55,9 +54,7 @@
             <tbody id="tblUsers"></tbody>
         </table>
         <div style="margin-top: 10px; text-align: center;">
-            <button onclick="changePageUser(-1)"> < Trước </button>
-            <span id="pageInfoUser">1</span>
-            <button onclick="changePageUser(1)"> Sau > </button>
+            <button onclick="changePageUser(-1)"> < </button> <span id="pageInfoUser">1</span> <button onclick="changePageUser(1)"> > </button>
         </div>
     </div>
 
@@ -68,45 +65,45 @@
         <button onclick="openModal('modalAddPlace')" style="background:#28a745; color:white; margin-left:10px;">+ Thêm</button>
 
         <table>
-            <thead><tr><th>ID</th><th>Tên</th><th>Loại</th><th>Sửa/Xóa</th></tr></thead>
+            <thead><tr><th>ID</th><th>Tên & Ảnh</th><th>Loại</th><th>Sửa/Xóa</th></tr></thead>
             <tbody id="tblPlaces"></tbody>
         </table>
         <div style="margin-top: 10px; text-align: center;">
-            <button onclick="changePagePlace(-1)"> < Trước </button>
-            <span id="pageInfoPlace">1</span>
-            <button onclick="changePagePlace(1)"> Sau > </button>
+            <button onclick="changePagePlace(-1)"> < </button> <span id="pageInfoPlace">1</span> <button onclick="changePagePlace(1)"> > </button>
         </div>
     </div>
 </div>
 
-<div id="modalAddUser" class="modal">
-    <div class="modal-box">
-        <h4>Thêm User</h4>
-        <input type="text" id="new_u" placeholder="Username">
-        <input type="password" id="new_p" placeholder="Password">
-        <input type="text" id="new_n" placeholder="Họ tên">
-        <div style="text-align: right;">
-            <button onclick="addUser()">Lưu</button>
-            <button onclick="closeModal('modalAddUser')">Đóng</button>
-        </div>
-    </div>
-</div>
+<div id="modalAddUser" class="modal"><div class="modal-box"><h4>Thêm User</h4><input type="text" id="new_u" placeholder="Username"><input type="password" id="new_p" placeholder="Password"><input type="text" id="new_n" placeholder="Họ tên"><div style="text-align: right;"><button onclick="addUser()">Lưu</button> <button onclick="closeModal('modalAddUser')">Đóng</button></div></div></div>
 
 <div id="modalAddPlace" class="modal">
     <div class="modal-box">
-        <h4>Thêm Địa Điểm</h4>
+        <h4>Thêm Địa Điểm Mới</h4>
         <input type="text" id="p_ten" placeholder="Tên địa điểm">
         <input type="text" id="p_dc" placeholder="Địa chỉ">
+        <label>Loại hình:</label>
         <select id="p_loai">
-            <option value="1">Nhà hàng</option>
-            <option value="2">Khách sạn</option>
-            <option value="3">Vui chơi</option>
-            <option value="4">Du lịch</option>
-            <option value="5">Mua sắm</option>
+            <option value="1">Nhà hàng</option> <option value="2">Khách sạn</option>
+            <option value="3">Vui chơi</option> <option value="4">Du lịch</option> <option value="5">Mua sắm</option>
         </select>
-        <textarea id="p_mota" placeholder="Mô tả" rows="3"></textarea>
-        <div style="text-align: right;">
-            <button onclick="addPlace()">Lưu</button>
+
+        <label>Hình ảnh:</label>
+        <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+            <input type="file" id="p_fileInput" multiple accept="image/*" style="display: none;" onchange="handleFileSelect('p')">
+            <button type="button" onclick="document.getElementById('p_fileInput').click()" style="background: #17a2b8; color: white;">📂 Chọn ảnh</button>
+            <button type="button" onclick="clearImages('p')" style="background: #6c757d; color: white;">Xóa hết</button>
+        </div>
+        <input type="text" id="p_anh" placeholder="Tên file sẽ hiện ở đây..." readonly style="background: #eee; color: #555;">
+
+        <div id="p_preview_container" style="display: flex; gap: 5px; overflow-x: auto; padding: 5px; border: 1px dashed #ccc; height: 70px; margin-bottom: 10px;">
+            <span style="color:#999; font-size:12px; margin: auto;">Chưa có ảnh</span>
+        </div>
+
+        <label>Link Map:</label> <input type="text" id="p_map">
+        <label>Mô tả:</label> <textarea id="p_mota" rows="5"></textarea>
+
+        <div style="text-align: right; margin-top: 10px;">
+            <button onclick="addPlace()" style="background: #28a745; color: white;">Lưu</button>
             <button onclick="closeModal('modalAddPlace')">Đóng</button>
         </div>
     </div>
@@ -116,16 +113,27 @@
     <div class="modal-box">
         <h4>Sửa Địa Điểm</h4>
         <input type="hidden" id="e_id">
-        <input type="text" id="e_ten" placeholder="Tên">
-        <input type="text" id="e_dc" placeholder="Địa chỉ">
+        <label>Tên:</label> <input type="text" id="e_ten">
+        <label>Địa chỉ:</label> <input type="text" id="e_dc">
+        <label>Loại:</label>
         <select id="e_loai">
-            <option value="1">Nhà hàng</option>
-            <option value="2">Khách sạn</option>
-            <option value="3">Vui chơi</option>
-            <option value="4">Du lịch</option>
-            <option value="5">Mua sắm</option>
+            <option value="1">Nhà hàng</option> <option value="2">Khách sạn</option>
+            <option value="3">Vui chơi</option> <option value="4">Du lịch</option> <option value="5">Mua sắm</option>
         </select>
-        <textarea id="e_mota" rows="3"></textarea>
+
+        <label>Hình ảnh:</label>
+        <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+            <input type="file" id="e_fileInput" multiple accept="image/*" style="display: none;" onchange="handleFileSelect('e')">
+            <button type="button" onclick="document.getElementById('e_fileInput').click()" style="background: #17a2b8; color: white;">📂 Chọn ảnh mới</button>
+            <button type="button" onclick="clearImages('e')" style="background: #6c757d; color: white;">Xóa hết</button>
+        </div>
+        <input type="text" id="e_anh" readonly style="background: #eee; color: #555;">
+
+        <div id="e_preview_container" style="display: flex; gap: 5px; overflow-x: auto; padding: 5px; border: 1px dashed #ccc; height: 70px; margin-bottom: 10px;"></div>
+
+        <label>Map:</label> <input type="text" id="e_map">
+        <label>Mô tả:</label> <textarea id="e_mota" rows="6"></textarea>
+
         <div style="text-align: right;">
             <button onclick="updatePlace()" style="background: blue; color: white;">Cập nhật</button>
             <button onclick="closeModal('modalEditPlace')">Đóng</button>

@@ -1,16 +1,12 @@
-// Kiểm tra quyền
 const role = localStorage.getItem("currentRole");
 if (role != 1) {
     alert("Không phận sự miễn vào!");
     window.location.href = "chonThanhPho.html";
 }
 
-let pageUser = 1;
-let pagePlace = 1;
-let totalPageUser = 1;
-let totalPagePlace = 1;
+let pageUser = 1, pagePlace = 1;
+let totalPageUser = 1, totalPagePlace = 1;
 
-// --- HÀM CHUNG ---
 function showTab(tab) {
     document.getElementById('tab-users').style.display = (tab === 'users') ? 'block' : 'none';
     document.getElementById('tab-places').style.display = (tab === 'places') ? 'block' : 'none';
@@ -18,8 +14,7 @@ function showTab(tab) {
 function openModal(id) { document.getElementById(id).style.display = 'block'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-// ================= USER =================
-
+// ================= QUẢN LÝ USER (ĐÃ KHÔI PHỤC) =================
 function loadUsers() {
     const kw = document.getElementById('searchUser').value;
     fetch(`/SMcity/api/admin-user?page=${pageUser}&q=${kw}`)
@@ -27,32 +22,18 @@ function loadUsers() {
         .then(res => {
             let html = "";
             totalPageUser = res.total_pages;
-
             res.data.forEach(u => {
                 html += `<tr>
-                <td>${u.user}</td>
-                <td>${u.ten}</td>
-                <td style="text-align:center;">
-                    <button onclick="deleteUser('${u.user}')" style="color:red;">🗑</button>
-                </td>
-            </tr>`;
+                    <td>${u.user}</td>
+                    <td>${u.ten}</td>
+                    <td style="text-align:center;">
+                        <button onclick="deleteUser('${u.user}')" style="color:red; border:1px solid red; background:white;">🗑 Xóa</button>
+                    </td>
+                </tr>`;
             });
             document.getElementById('tblUsers').innerHTML = html;
             document.getElementById('pageInfoUser').innerText = `Trang ${pageUser} / ${totalPageUser}`;
         });
-}
-
-function deleteUser(username) {
-    if (confirm("Xóa user: " + username + "?")) {
-        fetch('/SMcity/api/admin-user', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: `action=delete&username=${username}`
-        }).then(res => res.json()).then(data => {
-            alert(data.message);
-            loadUsers();
-        });
-    }
 }
 
 function addUser() {
@@ -69,6 +50,19 @@ function addUser() {
     });
 }
 
+function deleteUser(username) {
+    if (confirm("Xóa user: " + username + "?")) {
+        fetch('/SMcity/api/admin-user', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: `action=delete&username=${username}`
+        }).then(res => res.json()).then(data => {
+            alert(data.message);
+            loadUsers();
+        });
+    }
+}
+
 function changePageUser(step) {
     let nextPage = pageUser + step;
     if (nextPage >= 1 && nextPage <= totalPageUser) {
@@ -77,10 +71,8 @@ function changePageUser(step) {
     }
 }
 
+// ================= QUẢN LÝ ĐỊA ĐIỂM =================
 
-// ================= ĐỊA ĐIỂM =================
-
-// Load list thành phố
 fetch('/SMcity/api/danh-sach-thanh-pho').then(res=>res.json()).then(data => {
     let sel = document.getElementById('adminCitySelect');
     data.forEach(c => {
@@ -100,18 +92,27 @@ function loadPlaces() {
             totalPagePlace = res.total_pages;
 
             res.data.forEach(p => {
-                // Xử lý chuỗi an toàn
+                let encodedDesc = encodeURIComponent(p.mota);
                 let safeName = p.ten.replace(/'/g, "\\'");
                 let safeAddr = p.diachi.replace(/'/g, "\\'");
-                let safeDesc = "";
-                if(p.mota) safeDesc = p.mota.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                let safeMap = p.map ? p.map.replace(/'/g, "\\'") : "";
+
+                // --- FIX LỖI ẢNH TABLE: Chỉ lấy ảnh đầu tiên ---
+                let firstImg = 'default_place.jpg';
+                if (p.anh && p.anh.trim() !== "") {
+                    let imgs = p.anh.trim().split(/\s+/);
+                    if (imgs.length > 0) firstImg = imgs[0];
+                }
 
                 html += `<tr>
                 <td>${p.id}</td>
-                <td><b>${p.ten}</b><br><small>${p.diachi}</small></td>
+                <td>
+                    <img src="../images/${firstImg}" style="width:50px; height:35px; object-fit:cover; float:left; margin-right:8px; border-radius:4px; border:1px solid #ccc;">
+                    <b>${p.ten}</b>
+                </td>
                 <td>${p.ten_loai}</td>
                 <td style="text-align:center;">
-                    <button class="btn-action" onclick="openEditModal(${p.id}, '${safeName}', '${safeAddr}', ${p.id_loai}, '${safeDesc}')">✏️</button>
+                    <button class="btn-action" onclick="openEditModal(${p.id}, '${safeName}', '${safeAddr}', ${p.id_loai}, '${encodedDesc}', '${p.anh}', '${safeMap}')">✏️</button>
                     <button class="btn-action" onclick="deletePlace(${p.id})" style="color:red;">🗑</button>
                 </td>
             </tr>`;
@@ -121,35 +122,89 @@ function loadPlaces() {
         });
 }
 
-// Sửa lỗi ID null: Hàm này đảm bảo lấy đúng giá trị từ select box p_loai
-function addPlace() {
-    const idCity = document.getElementById('adminCitySelect').value;
-    const ten = document.getElementById('p_ten').value;
-    const dc = document.getElementById('p_dc').value;
+// --- HÀM XỬ LÝ FILE (CHỌN NHIỀU ẢNH) ---
+// prefix: 'p' (Add) hoặc 'e' (Edit)
+function handleFileSelect(prefix) {
+    const fileInput = document.getElementById(prefix + '_fileInput');
+    const nameInput = document.getElementById(prefix + '_anh');
+    const previewDiv = document.getElementById(prefix + '_preview_container');
 
-    // Lấy ID loại hình (1,2,3,4,5)
-    const idLoai = document.getElementById('p_loai').value;
+    if (fileInput.files && fileInput.files.length > 0) {
+        let fileNames = [];
+        previewDiv.innerHTML = ""; // Xóa preview cũ
 
-    const mota = document.getElementById('p_mota').value;
+        Array.from(fileInput.files).forEach(file => {
+            fileNames.push(file.name); // Lấy tên file
 
-    fetch('/SMcity/api/admin-diadiem', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        // Gửi tham số tên là "id_loai" để khớp với Servlet
-        body: `action=add&id_city=${idCity}&ten=${ten}&diachi=${dc}&id_loai=${idLoai}&mota=${mota}`
-    }).then(res => res.json()).then(data => {
-        alert(data.message);
-        if(data.status==='success') { closeModal('modalAddPlace'); loadPlaces(); }
-    });
+            // Tạo ảnh xem trước từ Blob (ko cần server)
+            let img = document.createElement("img");
+            img.src = URL.createObjectURL(file);
+            img.style.height = "60px";
+            img.style.width = "auto";
+            img.style.border = "1px solid #ddd";
+            img.style.borderRadius = "4px";
+            previewDiv.appendChild(img);
+        });
+
+        // Nối tên file bằng dấu cách và điền vào input
+        nameInput.value = fileNames.join(" ");
+    }
 }
 
-function openEditModal(id, ten, diachi, idLoai, mota) {
+function clearImages(prefix) {
+    document.getElementById(prefix + '_fileInput').value = "";
+    document.getElementById(prefix + '_anh').value = "";
+    document.getElementById(prefix + '_preview_container').innerHTML = "<span style='color:#999; font-size:12px; margin: auto;'>Đã xóa ảnh</span>";
+}
+
+// --- OPEN EDIT MODAL ---
+function openEditModal(id, ten, diachi, idLoai, encodedDesc, anh, map) {
     document.getElementById('e_id').value = id;
     document.getElementById('e_ten').value = ten;
     document.getElementById('e_dc').value = diachi;
     document.getElementById('e_loai').value = idLoai;
-    document.getElementById('e_mota').value = mota;
+    document.getElementById('e_mota').value = decodeURIComponent(encodedDesc);
+    document.getElementById('e_anh').value = anh;
+    document.getElementById('e_map').value = map;
+
+    // Xem trước ảnh cũ (Load từ Server)
+    const previewDiv = document.getElementById('e_preview_container');
+    previewDiv.innerHTML = "";
+    if(anh && anh.trim() !== "") {
+        let imgs = anh.trim().split(/\s+/);
+        imgs.forEach(imgName => {
+            let img = document.createElement("img");
+            img.src = "../images/" + imgName;
+            img.style.height = "60px";
+            img.style.border = "1px solid #ddd";
+            img.style.borderRadius = "4px";
+            img.onerror = function() { this.src = '../images/default_place.jpg'; };
+            previewDiv.appendChild(img);
+        });
+    } else {
+        previewDiv.innerHTML = "<span style='color:#999; font-size:12px; margin: auto;'>Chưa có ảnh</span>";
+    }
+
     openModal('modalEditPlace');
+}
+
+function addPlace() {
+    const idCity = document.getElementById('adminCitySelect').value;
+    const ten = document.getElementById('p_ten').value;
+    const dc = document.getElementById('p_dc').value;
+    const idLoai = document.getElementById('p_loai').value;
+    const mota = document.getElementById('p_mota').value;
+    const anh = document.getElementById('p_anh').value;
+    const map = document.getElementById('p_map').value;
+
+    fetch('/SMcity/api/admin-diadiem', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: `action=add&id_city=${idCity}&ten=${ten}&diachi=${dc}&id_loai=${idLoai}&mota=${mota}&anh=${anh}&map=${map}`
+    }).then(res => res.json()).then(data => {
+        alert(data.message);
+        if(data.status==='success') { closeModal('modalAddPlace'); loadPlaces(); }
+    });
 }
 
 function updatePlace() {
@@ -158,11 +213,13 @@ function updatePlace() {
     const dc = document.getElementById('e_dc').value;
     const loai = document.getElementById('e_loai').value;
     const mota = document.getElementById('e_mota').value;
+    const anh = document.getElementById('e_anh').value;
+    const map = document.getElementById('e_map').value;
 
     fetch('/SMcity/api/admin-diadiem', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: `action=update&id=${id}&ten=${ten}&diachi=${dc}&id_loai=${loai}&mota=${mota}`
+        body: `action=update&id=${id}&ten=${ten}&diachi=${dc}&id_loai=${loai}&mota=${mota}&anh=${anh}&map=${map}`
     }).then(res => res.json()).then(data => {
         alert(data.message);
         if(data.status==='success') { closeModal('modalEditPlace'); loadPlaces(); }
@@ -187,5 +244,5 @@ function changePagePlace(step) {
     }
 }
 
-// Chạy mặc định khi tải trang
+// Mặc định load Users khi vào trang
 loadUsers();

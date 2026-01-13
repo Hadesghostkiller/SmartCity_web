@@ -54,7 +54,14 @@ public class ChiTietDiaDiem extends HttpServlet {
                     String mapLink = rs.getString("map_link");
                     String anhList = rs.getString("anh_dd");
 
-                    if(moTa != null) moTa = moTa.replace("\"", "\\\"").replace("\n", " ");
+                    if(moTa != null) {
+                        moTa = moTa.replace("\\", "\\\\")
+                                .replace("\"", "\\\"")
+                                .replace("\n", "\\n") // Giữ lại dấu xuống dòng
+                                .replace("\r", "");
+                    } else {
+                        moTa = "";
+                    }
                     if(anhList == null || anhList.isEmpty()) anhList = "default_place.jpg";
                     if(mapLink == null) mapLink = "";
 

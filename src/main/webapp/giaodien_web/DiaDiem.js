@@ -88,7 +88,7 @@ btnFav.onclick = function() {
     });
 };
 
-// 3. GỢI Ý (CAROUSEL)
+// 3. GỢI Ý (CAROUSEL) - ĐÃ SỬA LỖI ẢNH & SAO
 function loadRecommendation() {
     fetch('/SMcity/api/lay-de-xuat?id=' + idDiaDiem)
         .then(res => res.json())
@@ -98,7 +98,12 @@ function loadRecommendation() {
             if(data.length === 0) { container.innerHTML = "<p style='padding:10px; color:#999'>Chưa có gợi ý.</p>"; return; }
 
             data.forEach(item => {
-                let img = item.anh ? item.anh : 'default_place.jpg';
+                // --- FIX LỖI ẢNH: Cắt chuỗi lấy ảnh đầu tiên ---
+                let img = 'default_place.jpg';
+                if (item.anh && item.anh.trim() !== "") {
+                    img = item.anh.trim().split(/\s+/)[0];
+                }
+
                 let html = `
                 <a href="DiaDiem.html?id=${item.id}" class="place-card">
                     <div class="card-img-container">
@@ -106,12 +111,15 @@ function loadRecommendation() {
                     </div>
                     <div class="card-body">
                         <h4 class="card-title">${item.ten}</h4>
-                        <div class="card-rating">★ Click xem chi tiết</div> 
+                        <div class="card-rating">
+                            <span class="rating-star-icon">★</span> Click xem chi tiết
+                        </div> 
                     </div>
                 </a>`;
                 container.innerHTML += html;
             });
-        });
+        })
+        .catch(err => console.error(err));
 }
 loadRecommendation();
 
@@ -134,21 +142,17 @@ function loadComments() {
         });
 }
 
-// --- XỬ LÝ GỬI BÌNH LUẬN (ĐÃ SỬA CHO SAO) ---
+// --- XỬ LÝ GỬI BÌNH LUẬN ---
 document.getElementById('btnSendComment').onclick = function() {
-    // 1. Lấy sao từ Radio button (Thay vì select box cũ)
     const checkedStar = document.querySelector('input[name="cmtRate"]:checked');
 
     if (!checkedStar) {
         alert("Vui lòng chọn số sao!"); return;
     }
     const rate = checkedStar.value;
-
-    // 2. Lấy nội dung
     const comment = document.getElementById('cmtText').value;
     if(comment.trim() === "") { alert("Vui lòng nhập nội dung!"); return; }
 
-    // 3. Gửi
     fetch('/SMcity/api/gui-binh-luan', {
         method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: `username=${currentUser}&id_dia_diem=${idDiaDiem}&rate=${rate}&comment=${comment}`

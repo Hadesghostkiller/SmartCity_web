@@ -2,44 +2,83 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Trang Cá Nhân</title>
+    <title>Trang Cá Nhân - SM City</title>
+    <link rel="icon" type="image/png" href="../images/smcity_logo.png">
+    <link rel="stylesheet" href="../styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-<div style="text-align: right;">
-    <a href="chonThanhPho.html">Về trang chủ</a> | <a href="login.html">Đăng xuất</a>
-</div>
-<hr>
+<body style="background-color: #f4f6f8;">
 
-<h2>Hồ Sơ Của Tôi</h2>
-<div id="adminArea" style="text-align: center; margin-bottom: 20px;"></div>
-<div style="border: 1px solid #ccc; padding: 15px; width: 400px;">
-    <h3>1. Thông tin tài khoản</h3>
-    <p>Username: <b id="lblUser">...</b></p>
-    <p>Họ và Tên: <input type="text" id="inpName"> <button id="btnSaveName">Lưu tên</button></p>
-
-    <hr>
-
-    <h3>2. Đổi mật khẩu</h3>
-    Mật khẩu cũ: <br><input type="password" id="oldPass"><br>
-    Mật khẩu mới: <br><input type="password" id="newPass"><br><br>
-    <button id="btnChangePass">Đổi Mật Khẩu</button>
-</div>
-
-<br>
-
-<div style="border: 1px solid #ccc; padding: 15px;">
-    <h3>3. Địa điểm yêu thích của tôi ❤️</h3>
-    <div id="favList">
-        Đang tải...
+<div class="top-bar">
+    <div>
+        <img src="../images/smcity_logo.png" style="height: 30px; vertical-align: middle; margin-right: 10px;">
+        <button onclick="window.location.href='chonThanhPho.html'" class="btn-switch-modern">❮ Về Trang Chủ</button>
+    </div>
+    <div class="top-right-menu">
+        <a href="#" onclick="logout()" style="color: red;">Đăng xuất <i class="fas fa-sign-out-alt"></i></a>
     </div>
 </div>
 
-<br>
+<div class="profile-container">
 
-<div style="border: 1px solid #ccc; padding: 15px; margin-bottom: 50px;">
-    <h3>4. Nhật ký hành trình 🕒</h3>
-    <div id="historyList">
-        Đang tải lịch sử...
+    <div class="profile-sidebar">
+
+        <div id="adminArea"></div>
+
+        <div class="profile-card">
+            <div class="profile-title">👤 Thông tin tài khoản</div>
+            <div style="text-align: center; margin-bottom: 15px;">
+                <img src="../images/default_user.png" style="width: 80px; border-radius: 50%; border: 3px solid #eee;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/149/149071.png'">
+                <p style="color: #888; margin-top: 5px;">@<span id="lblUser">...</span></p>
+            </div>
+
+            <label style="font-size: 14px; font-weight: bold;">Họ và tên hiển thị:</label>
+            <input type="text" id="inpName" class="profile-input" placeholder="Nhập tên của bạn...">
+            <button id="btnSaveName" class="btn-login" style="margin-top: 5px;">Lưu Thay Đổi</button>
+        </div>
+
+        <div class="profile-card">
+            <div class="profile-title">🔒 Đổi mật khẩu</div>
+            <input type="password" id="oldPass" class="profile-input" placeholder="Mật khẩu cũ">
+            <input type="password" id="newPass" class="profile-input" placeholder="Mật khẩu mới">
+            <button id="btnChangePass" class="btn-login" style="background: #555;">Cập Nhật Mật Khẩu</button>
+        </div>
+    </div>
+
+    <div class="profile-main">
+
+        <div class="profile-card">
+            <div class="profile-title">❤️ Địa điểm yêu thích</div>
+            <div id="favList">
+                <p style="color: #999;">Đang tải...</p>
+            </div>
+        </div>
+
+        <div class="profile-card">
+            <div class="history-controls">
+                <div class="profile-title" style="margin: 0; border: none;">🕒 Nhật ký hành trình</div>
+
+                <select id="sortHistory" class="sort-select" onchange="handleSortHistory()">
+                    <option value="date_desc">Mới nhất trước</option>
+                    <option value="date_asc">Cũ nhất trước</option>
+                    <option value="name_asc">Tên địa điểm (A-Z)</option>
+                    <option value="name_desc">Tên địa điểm (Z-A)</option>
+                </select>
+            </div>
+
+            <hr style="margin-bottom: 15px; border: 0; border-top: 1px solid #eee;">
+
+            <div id="historyList">
+                <p style="color: #999;">Đang tải lịch sử...</p>
+            </div>
+
+            <div class="pagination" id="paginationControls" style="display: none;">
+                <button class="page-btn" onclick="changePage(-1)">❮ Trước</button>
+                <span id="pageIndicator" style="font-weight: bold; color: #555;">Trang 1</span>
+                <button class="page-btn" onclick="changePage(1)">Sau ❯</button>
+            </div>
+        </div>
+
     </div>
 </div>
 
